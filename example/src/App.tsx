@@ -9,7 +9,7 @@ export default function App() {
 
   React.useEffect(() => {
     multiply(3, 7).then(setResult);
-    add(3, 7).then(setResultAdd)
+    add(3, 7).then(setResultAdd);
   }, []);
 
   return (
