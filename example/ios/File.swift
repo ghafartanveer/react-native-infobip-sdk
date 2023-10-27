@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  AwesomeModuleExample
+//  InfobipSdkExample
 //
 
 import Foundation

@@ -1,4 +1,4 @@
-package com.awesomemodule;
+package com.infobipsdk;
 
 import androidx.annotation.NonNull;
 
@@ -11,12 +11,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class AwesomeModulePackage implements ReactPackage {
+public class InfobipSdkPackage implements ReactPackage {
   @NonNull
   @Override
   public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
     List<NativeModule> modules = new ArrayList<>();
-    modules.add(new AwesomeModuleModule(reactContext));
+    modules.add(new InfobipSdkModule(reactContext));
     return modules;
   }
 

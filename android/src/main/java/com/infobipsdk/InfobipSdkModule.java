@@ -1,4 +1,4 @@
-package com.awesomemodule;
+package com.infobipsdk;
 
 import androidx.annotation.NonNull;
 
@@ -8,11 +8,11 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.module.annotations.ReactModule;
 
-@ReactModule(name = AwesomeModuleModule.NAME)
-public class AwesomeModuleModule extends ReactContextBaseJavaModule {
-  public static final String NAME = "AwesomeModule";
+@ReactModule(name = InfobipSdkModule.NAME)
+public class InfobipSdkModule extends ReactContextBaseJavaModule {
+  public static final String NAME = "InfobipSdk";
 
-  public AwesomeModuleModule(ReactApplicationContext reactContext) {
+  public InfobipSdkModule(ReactApplicationContext reactContext) {
     super(reactContext);
   }
 
