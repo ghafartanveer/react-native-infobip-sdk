@@ -16,3 +16,7 @@ export const InfoBipNativeSdk = NativeModules.InfoBipSdkManager
         },
       }
     );
+
+// export function multiply(a: number, b: number): Promise<number> {
+//   return InfobipSdk.multiply(a, b);
+// }

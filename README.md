@@ -1,17 +1,17 @@
-# react-native-awesome-module
+# react-native-infobip-sdk
 
-react-native-infobip
+infobip
 
 ## Installation
 
 ```sh
-npm install react-native-awesome-module
+npm install react-native-infobip-sdk
 ```
 
 ## Usage
 
 ```js
-import { multiply } from 'react-native-awesome-module';
+import { multiply } from 'react-native-infobip-sdk';
 
 // ...
 

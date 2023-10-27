@@ -1,21 +1,18 @@
 import * as React from 'react';
 
 import { StyleSheet, View, Text } from 'react-native';
-import { multiply, add } from 'react-native-awesome-module';
+import { multiply } from 'react-native-infobip-sdk';
 
 export default function App() {
   const [result, setResult] = React.useState<number | undefined>();
-  const [resultAdd, setResultAdd] = React.useState<number | undefined>();
 
   React.useEffect(() => {
     multiply(3, 7).then(setResult);
-    add(3, 7).then(setResultAdd);
   }, []);
 
   return (
     <View style={styles.container}>
       <Text>Result: {result}</Text>
-      <Text>Result Add: {resultAdd}</Text>
     </View>
   );
 }

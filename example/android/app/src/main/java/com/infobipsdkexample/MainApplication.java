@@ -1,4 +1,4 @@
-package com.awesomemoduleexample;
+package com.infobipsdkexample;
 
 import android.app.Application;
 import com.facebook.react.PackageList;

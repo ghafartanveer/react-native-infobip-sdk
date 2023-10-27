@@ -73,9 +73,9 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
-    namespace "com.awesomemoduleexample"
+    namespace "com.infobipsdkexample"
     defaultConfig {
-        applicationId "com.awesomemoduleexample"
+        applicationId "com.infobipsdkexample"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

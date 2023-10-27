@@ -1,7 +1,7 @@
 {
-  "name": "react-native-awesome-module",
+  "name": "react-native-infobip-sdk",
   "version": "0.1.0",
-  "description": "react-native-infobip",
+  "description": "infobip",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
   "types": "lib/typescript/src/index.d.ts",
@@ -26,7 +26,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace react-native-awesome-module-example",
+    "example": "yarn workspace react-native-infobip-sdk-example",
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
@@ -39,13 +39,13 @@
     "ios",
     "android"
   ],
-  "repository": "https://github.com/hamzaahzam/infobip-rn.git/react-native-awesome-module",
-  "author": "DevHumzaAhzam <asfandbutt97@gmail.com> (https://github.com/hamzaahzam/infobip-rn.git)",
+  "repository": "https://github.com/ghafartanveer/react-native-infobip-sdk",
+  "author": "ghafartanveer <ghafartanveer@gmail.com> (https://github.com/ghafartanveer)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hamzaahzam/infobip-rn.git/react-native-awesome-module/issues"
+    "url": "https://github.com/ghafartanveer/react-native-infobip-sdk/issues"
   },
-  "homepage": "https://github.com/hamzaahzam/infobip-rn.git/react-native-awesome-module#readme",
+  "homepage": "https://github.com/ghafartanveer/react-native-infobip-sdk#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
