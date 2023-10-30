@@ -15,8 +15,8 @@ class APIManager {
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("application/json", forHTTPHeaderField: "Accept")
-        // request.addValue("App 440ee51b0443c759ee58044e2cbfd8ad-d92c487b-a076-4f6c-bdd6-3a73bc99beeb", forHTTPHeaderField: "Authorization")
-        request.addValue(apiKey, forHTTPHeaderField: "Authorization")
+        request.addValue("App 440ee51b0443c759ee58044e2cbfd8ad-d92c487b-a076-4f6c-bdd6-3a73bc99beeb", forHTTPHeaderField: "Authorization")
+        // request.addValue(apiKey, forHTTPHeaderField: "Authorization")
         request.httpBody = try! JSONSerialization.data(withJSONObject: parameters)
         
         let dataTask = URLSession.shared.dataTask(with: request) { data, resppnse, error in
