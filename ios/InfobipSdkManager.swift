@@ -112,6 +112,9 @@ final class TelnyxSdkManager: RCTEventEmitter, TelnyxEventHandling {
                                   certificateId: certificateId)
     }
 
+    func call(withDest dest: String, )
+
+
     @objc static func processVoIPNotification(_ callId: String, pushMetaData: [String: Any]) {
         TelnyxSdk.shared.processVoIPNotification(callId: callId, pushMetaData: pushMetaData)
     }
@@ -120,10 +123,10 @@ final class TelnyxSdkManager: RCTEventEmitter, TelnyxEventHandling {
         TelnyxSdk.shared.hangup()
     }
 
-    @objc(call:headers:)
-    func call(withDest dest: String, andHeaders headers: [AnyHashable: Any]) -> PlivoOutgoing? {
-        return shared.call(withDest: dest, andHeaders: headers)
-    }
+    // @objc(call:headers:)
+    // func call(withDest dest: String, andHeaders headers: [AnyHashable: Any]) -> PlivoOutgoing? {
+    //     return shared.call(withDest: dest, andHeaders: headers)
+    // }
 
      @objc func reconnect() {
         shared.reconnect()
@@ -230,3 +233,74 @@ extension PlivoSdkManager: AudioDeviceManagerDelegate {
         sendEvent(withName: "Plivo-headphonesStateChanged", body: ["connected": connected])
     }
 }
+
+extension ViewController : WebrtcCallEventListener {
+    func onScreenShareRemoved(_ screenShareRemovedEvent: ScreenShareRemovedEvent) {
+        
+    }
+    
+    func onRinging(_ callRingingEvent: CallRingingEvent) {
+       print("on ringing")
+    }
+    
+    func onEarlyMedia(_ callEarlyMediaEvent: CallEarlyMediaEvent) {
+        
+    }
+    
+    func onEstablished(_ callEstablishedEvent: CallEstablishedEvent) {
+        
+    }
+    
+    func onCameraVideoAdded(_ cameraVideoAddedEvent: CameraVideoAddedEvent) {
+        
+    }
+    
+    func onCameraVideoUpdated(_ cameraVideoUpdatedEvent: CameraVideoUpdatedEvent) {
+        
+    }
+    
+    func onCameraVideoRemoved() {
+        
+    }
+    
+    func onScreenShareAdded(_ screenShareAddedEvent: ScreenShareAddedEvent) {
+        
+    }
+    
+    func onScreenShareRemoved() {
+        
+    }
+    
+    func onRemoteCameraVideoAdded(_ cameraVideoAddedEvent: CameraVideoAddedEvent) {
+        
+    }
+    
+    func onRemoteCameraVideoRemoved() {
+        
+    }
+    
+    func onRemoteScreenShareAdded(_ screenShareAddedEvent: ScreenShareAddedEvent) {
+        
+    }
+    
+    func onRemoteScreenShareRemoved() {
+        
+    }
+    
+    func onRemoteMuted() {
+        
+    }
+    
+    func onRemoteUnmuted() {
+        
+    }
+    
+    func onHangup(_ callHangupEvent: CallHangupEvent) {
+        
+    }
+    
+    func onError(_ errorEvent: ErrorEvent) {
+        
+    }
+}
+

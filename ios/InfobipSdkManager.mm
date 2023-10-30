@@ -3,6 +3,8 @@
 
 @interface RCT_EXTERN_MODULE(AwesomeModule, NSObject)
 
+RCT_EXTERN_METHOD(call)
+
 // TODO: Copied from PlivoSdkManager
 RCT_EXTERN_METHOD(multiply:(float)a withB:(float)b
                  withResolver:(RCTPromiseResolveBlock)resolve
