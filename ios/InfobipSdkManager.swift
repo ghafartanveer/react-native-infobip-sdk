@@ -27,20 +27,41 @@ import InfobipRTC
 @objc(InfobipSdkManager)
 
 final class InfobipSdkManager {
-    func call() {
+var infobipRTC: InfobipRTC {
+            get {
+                return getInfobipRTCInstance()
+            }
+        }
+
+    
+    
+
+    @objc func call() {
         APIManager.obtainToken(parameters: ["identity": "Alice"]) { APIResponse in
             switch APIResponse {
             case .Success(let identity):
-                if let token = identity?.token {
-                    let infobipRTC: InfobipRTC = getInfobipRTCInstance()
-                    let callPhoneRequest = CallPhoneRequest(token, destination: "41793026727", phoneCallEventListener: self)
+                let callPhoneRequest = CallPhoneRequest(token, destination: "41793026727", phoneCallEventListener: self)
                     let phoneCallOptions = PhoneCallOptions(from: "33755531044")
-                    let phoneCall = try? infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
-                }
+                    let phoneCall = try? self.infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
             case .Failure(let error):
                 print("error: \(error)")
             }
     }
+
+     @objc func handleIncomingCall(payload: PKPushPayload) {
+        if self.infobipRTC.isIncomingCall(payload) {
+            infobipRTC.handleIncomingCall(payload, self)
+        }
+    }
+
+    func isDebug() -> Bool {
+    #if DEBUG
+            return true
+    #else
+            return false
+    #endif
+        }
+
 }
 
 extension InfobipSdkManager: WebrtcCallEventListener {
@@ -110,6 +131,89 @@ extension InfobipSdkManager: WebrtcCallEventListener {
     
     func onError(_ errorEvent: ErrorEvent) {
         
+    }
+}
+
+extension InfobipSdkManager: IncomingCallEventListener {   
+        
+    func onIncomingWebrtcCall(_ incomingWebrtcCallEvent: IncomingWebrtcCallEvent) {
+        let incomingWebrtcCall = incomingWebrtcCallEvent.incomingWebrtcCall
+        // Don't forget to register this call to CallKit
+        incomingWebrtcCall.webrtcCallEventListener = WebrtcCallListener(incomingWebrtcCall)
+        incomingWebrtcCall.accept() // or incomingWebrtcCall.decline()
+    }
+    
+}
+
+class WebrtcCallListener:  WebrtcCallEventListener{
+    func onCameraVideoAdded(_ cameraVideoAddedEvent: CameraVideoAddedEvent) {
+        
+    }
+    
+    func onCameraVideoUpdated(_ cameraVideoUpdatedEvent: CameraVideoUpdatedEvent) {
+        
+    }
+    
+    func onCameraVideoRemoved() {
+        
+    }
+    
+    func onScreenShareAdded(_ screenShareAddedEvent: ScreenShareAddedEvent) {
+        
+    }
+    
+    func onScreenShareRemoved(_ screenShareRemovedEvent: ScreenShareRemovedEvent) {
+        
+    }
+    
+    func onRemoteCameraVideoAdded(_ cameraVideoAddedEvent: CameraVideoAddedEvent) {
+        
+    }
+    
+    func onRemoteCameraVideoRemoved() {
+        
+    }
+    
+    func onRemoteScreenShareAdded(_ screenShareAddedEvent: ScreenShareAddedEvent) {
+        
+    }
+    
+    func onRemoteScreenShareRemoved() {
+        
+    }
+    
+    func onRemoteMuted() {
+        
+    }
+    
+    func onRemoteUnmuted() {
+        
+    }
+    
+    func onRinging(_ callRingingEvent: CallRingingEvent) {
+        
+    }
+    
+    func onEarlyMedia(_ callEarlyMediaEvent: CallEarlyMediaEvent) {
+        
+    }
+    
+    func onEstablished(_ callEstablishedEvent: CallEstablishedEvent) {
+        
+    }
+    
+    func onHangup(_ callHangupEvent: CallHangupEvent) {
+        
+    }
+    
+    func onError(_ errorEvent: ErrorEvent) {
+        
+    }
+    
+    let webrtcCall : WebrtcCall
+    
+    init(_ webrtcCall: WebrtcCall) {
+        self.webrtcCall = webrtcCall
     }
 }
 
