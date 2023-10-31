@@ -9,15 +9,16 @@
 //TODO: These methods will be used to initialize the SDK...
 
 // @interface PlivoSdkManager : RCTEventEmitter <RCTBridgeModule>
-+ (void)loginWithUsername:(NSString *)username
-                 password:(NSString *)password
-              deviceToken:(NSString *)deviceToken
-            certificateId:(NSString *)certificateId;
+// + (void)loginWithUsername:(NSString *)username
+//                  password:(NSString *)password
+//               deviceToken:(NSString *)deviceToken
+//             certificateId:(NSString *)certificateId;
 
-+ (void)relayVoipPushNotification:(NSDictionary *)pushInfo;
+// + (void)relayVoipPushNotification:(NSDictionary *)pushInfo;
++ (void)handleIncomingCall:(NSDictionary *)pushInfo;
 
 // @interface TelnyxSdkManager : RCTEventEmitter <RCTBridgeModule>
-+ (void)processVoIPNotification:(NSString *)callId
-                   pushMetaData:(NSDictionary *)pushMetaData;
-+ (void)cancelAllCalls;
+// + (void)processVoIPNotification:(NSString *)callId
+//                    pushMetaData:(NSDictionary *)pushMetaData;
+// + (void)cancelAllCalls;
 @end
