@@ -33,7 +33,7 @@ var infobipRTC: InfobipRTC {
             }
         }
 
-    
+    var incomingWebrtcCall: IncomingWebrtcCall?
     
 
     @objc func call() {
@@ -51,6 +51,44 @@ var infobipRTC: InfobipRTC {
      @objc func handleIncomingCall(payload: PKPushPayload) {
         if self.infobipRTC.isIncomingCall(payload) {
             infobipRTC.handleIncomingCall(payload, self)
+        }
+    }
+
+    @objc func acceptCall() {
+        if let incomingCall = self.incomingWebrtcCall {
+            incomingCall.accept()
+        }
+    }
+    
+    @objc func declineCall() {
+        if let incomingCall = self.incomingWebrtcCall {
+            incomingCall.decline()
+        }
+    }
+    
+    @objc func muteCall() {
+        if let incomingCall = self.incomingWebrtcCall {
+            do {
+                try incomingCall.mute(true)
+            } catch _ {
+                
+            }
+        }
+    }
+    
+    @objc func unMuteCall() {
+        if let incomingCall = self.incomingWebrtcCall {
+            do {
+                try incomingCall.mute(false)
+            } catch _ {
+                
+            }
+        }
+    }
+    
+    @objc func hangupCall() {
+        if let incomingCall = self.incomingWebrtcCall {
+            incomingCall.hangup()
         }
     }
 
@@ -137,10 +175,8 @@ extension InfobipSdkManager: WebrtcCallEventListener {
 extension InfobipSdkManager: IncomingCallEventListener {   
         
     func onIncomingWebrtcCall(_ incomingWebrtcCallEvent: IncomingWebrtcCallEvent) {
-        let incomingWebrtcCall = incomingWebrtcCallEvent.incomingWebrtcCall
-        // Don't forget to register this call to CallKit
-        incomingWebrtcCall.webrtcCallEventListener = WebrtcCallListener(incomingWebrtcCall)
-        incomingWebrtcCall.accept() // or incomingWebrtcCall.decline()
+        self.incomingWebrtcCall = incomingWebrtcCallEvent.incomingWebrtcCall
+        self.incomingWebrtcCall!.webrtcCallEventListener = WebrtcCallListener(self.incomingWebrtcCall!)
     }
     
 }
