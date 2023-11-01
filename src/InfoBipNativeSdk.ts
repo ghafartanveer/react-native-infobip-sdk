@@ -6,8 +6,8 @@ const LINKING_ERROR =
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo Go\n';
 
-export const InfoBipNativeSdk = NativeModules.InfoBipSdkManager
-  ? NativeModules.InfoBipSdkManager
+export const InfoBipNativeSdk = NativeModules.InfobipSdkManager
+  ? NativeModules.InfobipSdkManager
   : new Proxy(
       {},
       {

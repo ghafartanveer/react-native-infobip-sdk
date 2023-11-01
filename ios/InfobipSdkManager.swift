@@ -54,19 +54,19 @@ var infobipRTC: InfobipRTC {
         }
     }
 
-    @objc func acceptCall() {
+    @objc func answer() {
         if let incomingCall = self.incomingWebrtcCall {
             incomingCall.accept()
         }
     }
     
-    @objc func declineCall() {
+    @objc func reject() {
         if let incomingCall = self.incomingWebrtcCall {
             incomingCall.decline()
         }
     }
     
-    @objc func muteCall() {
+    @objc func mute() {
         if let incomingCall = self.incomingWebrtcCall {
             do {
                 try incomingCall.mute(true)
@@ -76,7 +76,7 @@ var infobipRTC: InfobipRTC {
         }
     }
     
-    @objc func unMuteCall() {
+    @objc func unmute() {
         if let incomingCall = self.incomingWebrtcCall {
             do {
                 try incomingCall.mute(false)
@@ -86,7 +86,7 @@ var infobipRTC: InfobipRTC {
         }
     }
     
-    @objc func hangupCall() {
+    @objc func hangup() {
         if let incomingCall = self.incomingWebrtcCall {
             incomingCall.hangup()
         }
