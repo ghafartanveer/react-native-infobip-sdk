@@ -76,7 +76,7 @@ final class InfobipSdkManager: NSObject, PhoneCallEventListener {
         }
     }
     
-     @objc func muteCall() {
+     @objc func mute() {
         if let incomingCall = self.incomingWebrtcCall {
             do {
                 try incomingCall.mute(true)
@@ -92,7 +92,7 @@ final class InfobipSdkManager: NSObject, PhoneCallEventListener {
         }
     }
     
-    @objc func unMuteCall() {
+    @objc func unMute() {
         if let incomingCall = self.incomingWebrtcCall {
             do {
                 try incomingCall.mute(false)
@@ -108,7 +108,7 @@ final class InfobipSdkManager: NSObject, PhoneCallEventListener {
         }
     }
     
-    @objc func hangupCall() {
+    @objc func hangup() {
         if let incomingCall = self.incomingWebrtcCall {
             incomingCall.hangup()
         } else if let outgoingCall = self.outgoingCall {
