@@ -50,59 +50,58 @@ final class InfobipSdkManager: NSObject, PhoneCallEventListener {
                 print("error: \(String(describing: error))")
             }
         }
-        
-        func handleIncomingCall(payload: PKPushPayload) {
-            if self.infobipRTC.isIncomingCall(payload) {
-                infobipRTC.handleIncomingCall(payload, self)
+    }
+    
+    @objc func handleIncomingCall(payload: PKPushPayload) {
+        if self.infobipRTC.isIncomingCall(payload) {
+            infobipRTC.handleIncomingCall(payload, self)
+        }
+    }
+    
+    @objc func answer() {
+        if let incomingCall = self.incomingWebrtcCall {
+            incomingCall.accept()
+        }
+    }
+    
+    @objc func reject() {
+        if let incomingCall = self.incomingWebrtcCall {
+            incomingCall.decline()
+        }
+    }
+    
+    @objc func mute() {
+        if let incomingCall = self.incomingWebrtcCall {
+            do {
+                try incomingCall.mute(true)
+            } catch _ {
+                
             }
         }
-        
-        func answer() {
-            if let incomingCall = self.incomingWebrtcCall {
-                incomingCall.accept()
+    }
+    
+    @objc func unmute() {
+        if let incomingCall = self.incomingWebrtcCall {
+            do {
+                try incomingCall.mute(false)
+            } catch _ {
+                
             }
         }
-        
-        func reject() {
-            if let incomingCall = self.incomingWebrtcCall {
-                incomingCall.decline()
-            }
+    }
+    
+    @objc func hangup() {
+        if let incomingCall = self.incomingWebrtcCall {
+            incomingCall.hangup()
         }
-        
-        func mute() {
-            if let incomingCall = self.incomingWebrtcCall {
-                do {
-                    try incomingCall.mute(true)
-                } catch _ {
-                    
-                }
-            }
-        }
-        
-        func unmute() {
-            if let incomingCall = self.incomingWebrtcCall {
-                do {
-                    try incomingCall.mute(false)
-                } catch _ {
-                    
-                }
-            }
-        }
-        
-        func hangup() {
-            if let incomingCall = self.incomingWebrtcCall {
-                incomingCall.hangup()
-            }
-        }
-        
-        func isDebug() -> Bool {
+    }
+    
+    @objc func isDebug() -> Bool {
 #if DEBUG
-            return true
+        return true
 #else
-            return false
+        return false
 #endif
-        }
-        
     }
 }
 
