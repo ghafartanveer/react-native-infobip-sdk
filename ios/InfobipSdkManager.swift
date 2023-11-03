@@ -1,4 +1,5 @@
 import React
+import PushKit
 import Foundation
 import InfobipRTC
 
@@ -26,81 +27,85 @@ import InfobipRTC
 
 @objc(InfobipSdkManager)
 
-final class InfobipSdkManager {
-var infobipRTC: InfobipRTC {
-            get {
-                return getInfobipRTCInstance()
-            }
+final class InfobipSdkManager: NSObject, PhoneCallEventListener {
+    var infobipRTC: InfobipRTC {
+        get {
+            return getInfobipRTCInstance()
         }
-
+    }
+    
     var incomingWebrtcCall: IncomingWebrtcCall?
     
-
+    
     @objc func call() {
         APIManager.obtainToken(parameters: ["identity": "Alice"]) { APIResponse in
             switch APIResponse {
             case .Success(let identity):
-                let callPhoneRequest = CallPhoneRequest(token, destination: "41793026727", phoneCallEventListener: self)
-                    let phoneCallOptions = PhoneCallOptions(from: "33755531044")
-                    let phoneCall = try? self.infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
+                let callPhoneRequest = CallPhoneRequest("", destination: "41793026727", phoneCallEventListener: self)
+//                let callPhoneRequest = CallPhoneRequest(token, destination: "41793026727", phoneCallEventListener: self)
+                let phoneCallOptions = PhoneCallOptions(from: "33755531044")
+                let phoneCall = try? self.infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
             case .Failure(let error):
-                print("error: \(error)")
-            }
-    }
-
-     @objc func handleIncomingCall(payload: PKPushPayload) {
-        if self.infobipRTC.isIncomingCall(payload) {
-            infobipRTC.handleIncomingCall(payload, self)
-        }
-    }
-
-    @objc func answer() {
-        if let incomingCall = self.incomingWebrtcCall {
-            incomingCall.accept()
-        }
-    }
-    
-    @objc func reject() {
-        if let incomingCall = self.incomingWebrtcCall {
-            incomingCall.decline()
-        }
-    }
-    
-    @objc func mute() {
-        if let incomingCall = self.incomingWebrtcCall {
-            do {
-                try incomingCall.mute(true)
-            } catch _ {
-                
+                print("error: \(String(describing: error))")
             }
         }
-    }
-    
-    @objc func unmute() {
-        if let incomingCall = self.incomingWebrtcCall {
-            do {
-                try incomingCall.mute(false)
-            } catch _ {
-                
+        
+        func handleIncomingCall(payload: PKPushPayload) {
+            if self.infobipRTC.isIncomingCall(payload) {
+                infobipRTC.handleIncomingCall(payload, self)
             }
         }
-    }
-    
-    @objc func hangup() {
-        if let incomingCall = self.incomingWebrtcCall {
-            incomingCall.hangup()
+        
+        func answer() {
+            if let incomingCall = self.incomingWebrtcCall {
+                incomingCall.accept()
+            }
         }
-    }
-
-    func isDebug() -> Bool {
-    #if DEBUG
+        
+        func reject() {
+            if let incomingCall = self.incomingWebrtcCall {
+                incomingCall.decline()
+            }
+        }
+        
+        func mute() {
+            if let incomingCall = self.incomingWebrtcCall {
+                do {
+                    try incomingCall.mute(true)
+                } catch _ {
+                    
+                }
+            }
+        }
+        
+        func unmute() {
+            if let incomingCall = self.incomingWebrtcCall {
+                do {
+                    try incomingCall.mute(false)
+                } catch _ {
+                    
+                }
+            }
+        }
+        
+        func hangup() {
+            if let incomingCall = self.incomingWebrtcCall {
+                incomingCall.hangup()
+            }
+        }
+        
+        func isDebug() -> Bool {
+#if DEBUG
             return true
-    #else
+#else
             return false
-    #endif
+#endif
         }
-
+        
+    }
 }
+
+
 
 extension InfobipSdkManager: WebrtcCallEventListener {
     func onScreenShareRemoved(_ screenShareRemovedEvent: ScreenShareRemovedEvent) {
@@ -108,7 +113,7 @@ extension InfobipSdkManager: WebrtcCallEventListener {
     }
     
     func onRinging(_ callRingingEvent: CallRingingEvent) {
-       print("on ringing")
+        print("on ringing")
     }
     
     func onEarlyMedia(_ callEarlyMediaEvent: CallEarlyMediaEvent) {
@@ -173,7 +178,7 @@ extension InfobipSdkManager: WebrtcCallEventListener {
 }
 
 extension InfobipSdkManager: IncomingCallEventListener {   
-        
+    
     func onIncomingWebrtcCall(_ incomingWebrtcCallEvent: IncomingWebrtcCallEvent) {
         self.incomingWebrtcCall = incomingWebrtcCallEvent.incomingWebrtcCall
         self.incomingWebrtcCall!.webrtcCallEventListener = WebrtcCallListener(self.incomingWebrtcCall!)
@@ -342,10 +347,10 @@ class WebrtcCallListener:  WebrtcCallEventListener{
 
 //     func callNew() {
 //         let infobipRTC: InfobipRTC = getInfobipRTCInstance()
-        
+
 //     }
 
-    
+
 
 
 //     @objc static func processVoIPNotification(_ callId: String, pushMetaData: [String: Any]) {

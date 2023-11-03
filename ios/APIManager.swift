@@ -10,7 +10,7 @@ enum APIResponse {
 typealias APICompletion = (APIResponse) -> ()
 
 class APIManager {
-    class func obtainToken(apiKey: String, parameters: [String: Any], completion : @escaping APICompletion) {
+    class func obtainToken(parameters: [String: Any], completion : @escaping APICompletion) {
         var request = URLRequest(url: URL(string: "https://pw3w1m.api.infobip.com/webrtc/1/token")!)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
