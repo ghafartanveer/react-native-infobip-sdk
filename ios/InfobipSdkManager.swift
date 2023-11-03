@@ -35,6 +35,7 @@ final class InfobipSdkManager: NSObject, PhoneCallEventListener {
     }
     
     var incomingWebrtcCall: IncomingWebrtcCall?
+    var outgoingCall: PhoneCall?
     
     
     @objc func call(apiKey: String, identity: String, destination: String, caller: String) {
@@ -44,10 +45,41 @@ final class InfobipSdkManager: NSObject, PhoneCallEventListener {
                 if let token = identity?.token {
                     let callPhoneRequest = CallPhoneRequest(token, destination: destination, phoneCallEventListener: self)
                     let phoneCallOptions = PhoneCallOptions(from: caller)
-                    let phoneCall = try? self.infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
+                    do {
+                        self.outgoingCall = try self.infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
+                    } catch _ {
+
+                    }
+
                 }
             case .Failure(let error):
                 print("error: \(String(describing: error))")
+            }
+        }
+    }
+
+    @objc func hangupOutgoingCall() {
+        if let outgoingCall = self.outgoingCall {
+            outgoingCall.hangup()
+        }
+    }
+    
+    @objc func muteOutgoingCall() {
+        if let outgoingCall = self.outgoingCall {
+            do {
+                try outgoingCall.mute(true)
+            } catch _ {
+                
+            }
+        }
+    }
+    
+    @objc func unMuteOutgoingCall() {
+        if let outgoingCall = self.outgoingCall {
+            do {
+                try outgoingCall.mute(false)
+            } catch _ {
+                
             }
         }
     }
