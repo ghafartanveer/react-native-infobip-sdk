@@ -37,14 +37,15 @@ final class InfobipSdkManager: NSObject, PhoneCallEventListener {
     var incomingWebrtcCall: IncomingWebrtcCall?
     
     
-    @objc func call() {
-        APIManager.obtainToken(parameters: ["identity": "Alice"]) { APIResponse in
+    @objc func call(apiKey: String, identity: String, destination: String, caller: String) {
+        APIManager.obtainToken(parameters: ["identity": identity]) { APIResponse in
             switch APIResponse {
             case .Success(let identity):
-                let callPhoneRequest = CallPhoneRequest("", destination: "41793026727", phoneCallEventListener: self)
-//                let callPhoneRequest = CallPhoneRequest(token, destination: "41793026727", phoneCallEventListener: self)
-                let phoneCallOptions = PhoneCallOptions(from: "33755531044")
-                let phoneCall = try? self.infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
+                if let token = identity?.token {
+                    let callPhoneRequest = CallPhoneRequest(token, destination: destination, phoneCallEventListener: self)
+                    let phoneCallOptions = PhoneCallOptions(from: caller)
+                    let phoneCall = try? self.infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
+                }
             case .Failure(let error):
                 print("error: \(String(describing: error))")
             }
