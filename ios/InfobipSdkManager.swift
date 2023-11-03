@@ -57,32 +57,6 @@ final class InfobipSdkManager: NSObject, PhoneCallEventListener {
             }
         }
     }
-
-    @objc func hangupOutgoingCall() {
-        if let outgoingCall = self.outgoingCall {
-            outgoingCall.hangup()
-        }
-    }
-    
-    @objc func muteOutgoingCall() {
-        if let outgoingCall = self.outgoingCall {
-            do {
-                try outgoingCall.mute(true)
-            } catch _ {
-                
-            }
-        }
-    }
-    
-    @objc func unMuteOutgoingCall() {
-        if let outgoingCall = self.outgoingCall {
-            do {
-                try outgoingCall.mute(false)
-            } catch _ {
-                
-            }
-        }
-    }
     
     @objc func handleIncomingCall(payload: PKPushPayload) {
         if self.infobipRTC.isIncomingCall(payload) {
@@ -102,29 +76,43 @@ final class InfobipSdkManager: NSObject, PhoneCallEventListener {
         }
     }
     
-    @objc func mute() {
+     @objc func muteCall() {
         if let incomingCall = self.incomingWebrtcCall {
             do {
                 try incomingCall.mute(true)
             } catch _ {
                 
             }
-        }
-    }
-    
-    @objc func unmute() {
-        if let incomingCall = self.incomingWebrtcCall {
+        } else if let outgoingCall = self.outgoingCall {
             do {
-                try incomingCall.mute(false)
+                try outgoingCall.mute(true)
             } catch _ {
                 
             }
         }
     }
     
-    @objc func hangup() {
+    @objc func unMuteCall() {
+        if let incomingCall = self.incomingWebrtcCall {
+            do {
+                try incomingCall.mute(false)
+            } catch _ {
+                
+            }
+        } else if let outgoingCall = self.outgoingCall {
+            do {
+                try outgoingCall.mute(false)
+            } catch _ {
+                
+            }
+        }
+    }
+    
+    @objc func hangupCall() {
         if let incomingCall = self.incomingWebrtcCall {
             incomingCall.hangup()
+        } else if let outgoingCall = self.outgoingCall {
+            outgoingCall.hangup()
         }
     }
     
