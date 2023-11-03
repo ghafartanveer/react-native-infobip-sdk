@@ -189,7 +189,7 @@ extension InfobipSdkManager: WebrtcCallEventListener {
     }
     
     func onHangup(_ callHangupEvent: CallHangupEvent) {
-        
+        sendEvent(withName: "Infobip-onOutgoingCallHangup", body: data)
     }
     
     func onError(_ errorEvent: ErrorEvent) {
