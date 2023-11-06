@@ -39,6 +39,10 @@ final class InfobipSdkManager: NSObject, PhoneCallEventListener {
     
     
     @objc func call(apiKey: String, identity: String, destination: String, caller: String) {
+        print("apiKey: \(apiKey)")
+        print("identity: \(identity)")
+        print("destination: \(destination)")
+        print("caller: \(caller)")
         APIManager.obtainToken(parameters: ["identity": identity]) { APIResponse in
             switch APIResponse {
             case .Success(let identity):

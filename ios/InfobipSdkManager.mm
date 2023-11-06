@@ -13,8 +13,10 @@ RCT_EXTERN_METHOD(login:(nonnull NSString *)userName
 RCT_EXTERN_METHOD(reconnect)
 RCT_EXTERN_METHOD(logout)
 
-RCT_EXTERN_METHOD(call:(nonnull NSString *)dest
-                    headers:(NSDictionary *)headers
+RCT_EXTERN_METHOD(call:(nonnull NSString *)apiKey
+                  identity:(nonnull NSString *)identity
+                  destination:(nonnull NSString *)destination
+                  caller:(nonnull NSString *)caller
                   )
 
 RCT_EXTERN_METHOD(mute)
