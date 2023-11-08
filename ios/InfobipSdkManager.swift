@@ -88,28 +88,19 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener {
     }
 //    1EF75BA5-C229-4B96-9730-28DBECFFBF72
     
-    @objc func call(_ apiKey: String, identity: String, destination: String, caller: String) {
+    @objc func call(_ apiKey: String, token: String, identity: String, destination: String, caller: String) {
         print("apiKey: \(apiKey)")
 //        print("identity: \(identity)")
         print("push identity: \(self.identity)")
         print("destination: \(destination)")
         print("caller: \(caller)")
-        APIManager.obtainToken(apiKey: apiKey, parameters: ["identity": "\(self.identity)"]) { APIResponse in
-            switch APIResponse {
-            case .Success(let identity):
-                if let token = identity?.token {
-                    let callPhoneRequest = CallPhoneRequest(token, destination: destination, phoneCallEventListener: self)
-                    let phoneCallOptions = PhoneCallOptions(from: caller)
-                    do {
-                        self.outgoingCall = try self.infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
-                    } catch _ {
-                        
-                    }
-                    
-                }
-            case .Failure(let error):
-                print("error: \(String(describing: error))")
-            }
+        let callPhoneRequest = CallPhoneRequest(token, destination: destination, phoneCallEventListener: self)
+        callPhoneRequest.debug = true
+        let phoneCallOptions = PhoneCallOptions(from: caller)
+        do {
+            self.outgoingCall = try self.infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
+        } catch let ex {
+            print(ex.localizedDescription)            
         }
     }
     
@@ -187,27 +178,17 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener {
     //            }
     //        }
     
-    //    @objc func enablePushNotification(_ apiKey: String, pushCredentials: PKPushCredentials, pushConfigId: String) {
-    @objc func registerPushNotification(_ credentials: PKPushCredentials) {
+    //    @objc func enablePushNotification(_ apiKey: String, token: String, pushCredentials: PKPushCredentials, pushConfigId: String) {
+    @objc func registerPushNotification(_ credentials: PKPushCredentials, token: String) {
         let configId = "768d1685-cde7-4a8e-b22d-317e9a9faff9"
         print("push identity: \(self.identity)")
-        //        APIManager.obtainToken(apiKey: apiKey, parameters: ["identity": "push-config-id-token"]) { APIResponse in
-        APIManager.obtainToken(apiKey: "440ee51b0443c759ee58044e2cbfd8ad-d92c487b-a076-4f6c-bdd6-3a73bc99beeb", parameters: ["identity": self.identity]) { APIResponse in
-            switch APIResponse {
-            case .Success(let identity):
-                if let token = identity?.token {
-                    let debug = true//self.isDebug()
+        let debug = true//self.isDebug()
 //                    self.infobipRTC.enablePushNotification(token, pushCredentials: credentials, debug: debug, pushConfigId: configId)
                     self.infobipRTC.enablePushNotification(token, pushCredentials: credentials, debug: debug, pushConfigId: configId) { result in
                         print("enablePushNotification result : \(result.status)")
                         print("enablePushNotification result : \(result.message)")
                      
                     }
-                }
-            case .Failure(let error):
-                print("error: \(error)")
-            }
-        }
     }
     
     @objc func isDebug() -> Bool {
