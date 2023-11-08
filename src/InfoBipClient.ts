@@ -28,7 +28,8 @@ interface PlivoIncomingEvent {
 type Handler<T> = (data: T) => void;
 
 const createListener = <T>(event: string, handler: Handler<T>) => {
-  const listener = emitter.addListener(`Plivo-${event}`, handler);
+  // const listener = emitter.addListener(`Plivo-${event}`, handler);
+  const listener = emitter.addListener(`${event}`, handler);
   return () => listener.remove();
 };
 
@@ -43,10 +44,16 @@ export class InfoBipClient {
   ) {
     return InfoBipNativeSdk.login(username, password, fcmToken, certificateId);
   }
-
-  call(phoneNumber: string, headers: Record<string, string>) {
-    return InfoBipNativeSdk.call(phoneNumber, headers);
+  registerPushNotification(token: string, identity: string) {
+    return InfoBipNativeSdk.registerPushNotification(token, identity);
   }
+  call(apiKey: string, identity: string, destination: string, caller: string) {
+    return InfoBipNativeSdk.call(apiKey, identity, destination, caller);
+  }
+
+  // call(phoneNumber: string, headers: Record<string, string>) {
+  //   return InfoBipNativeSdk.call(phoneNumber, headers);
+  // }
 
   reconnect() {
     InfoBipNativeSdk.reconnect();
@@ -149,7 +156,7 @@ export class InfoBipClient {
     return createListener('onOutgoingCallInvalid', handler);
   }
 
-  onHeadphonesStateChanged(handler: Handler<{connected: boolean}>) {
+  onHeadphonesStateChanged(handler: Handler<{ connected: boolean }>) {
     return createListener('headphonesStateChanged', handler);
   }
 }
