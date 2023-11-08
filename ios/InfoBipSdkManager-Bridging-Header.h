@@ -2,8 +2,9 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTEventEmitter.h>
 #import <React/RCTViewManager.h>
+#import <PushKit/PushKit.h>
 
-@interface InfoBipSdkManager : RCTEventEmitter <RCTBridgeModule>
+@interface InfobipSdkManager : RCTEventEmitter <RCTBridgeModule>
 
 //TODO: Need to identify where these methods are defined...
 //TODO: These methods will be used to initialize the SDK...
@@ -15,7 +16,12 @@
 //             certificateId:(NSString *)certificateId;
 
 // + (void)relayVoipPushNotification:(NSDictionary *)pushInfo;
-+ (void)handleIncomingCall:(NSDictionary *)pushInfo;
+- (void)handleIncomingCall:(NSDictionary *)pushInfo;
+- (void)registerPushNotification:(PKPushCredentials *)credentials;
+//+ (InfobipSdkManager *)shared;
+@property (class, retain) InfobipSdkManager *shared;
+
+
 
 // @interface TelnyxSdkManager : RCTEventEmitter <RCTBridgeModule>
 // + (void)processVoIPNotification:(NSString *)callId
