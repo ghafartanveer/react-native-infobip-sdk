@@ -19,15 +19,16 @@ RCT_EXTERN_METHOD(logout)
 //                   caller:(nonnull NSString *)caller
 //                   )
 
-                  RCT_EXTERN_METHOD(call:(nonnull NSString *)apiKey
+RCT_EXTERN_METHOD(call:(nonnull NSString *)apiKey
+                  token:(nonnull NSString *)token
                   identity:(nonnull NSString *)identity
                   destination:(nonnull NSString *)destination
                   caller:(nonnull NSString *)caller
                   )
 
-//RCT_EXTERN_METHOD(registerPushNotification:(nonnull NSString *)deviceToken
-//                  identity:(nonnull NSString *)identity
-//                  )
+RCT_EXTERN_METHOD(registerPushNotification:(nonnull NSString *)token
+                  pushConfigId:(nonnull NSString *)pushConfigId
+                  )
 
 RCT_EXTERN_METHOD(mute)
 RCT_EXTERN_METHOD(unmute)
@@ -45,7 +46,7 @@ RCT_EXTERN_METHOD(stopAudioDevice)
 
 + (BOOL)requiresMainQueueSetup
 {
-  return NO;
+    return NO;
 }
 
 @end

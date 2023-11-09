@@ -44,11 +44,26 @@ export class InfoBipClient {
   ) {
     return InfoBipNativeSdk.login(username, password, fcmToken, certificateId);
   }
-  registerPushNotification(token: string, identity: string) {
-    return InfoBipNativeSdk.registerPushNotification(token, identity);
+  // registerPushNotification(token: string, identity: string) {
+  //   return InfoBipNativeSdk.registerPushNotification(token, identity);
+  // }
+  registerPushNotification(token: string, pushConfigId: string) {
+    return InfoBipNativeSdk.registerPushNotification(token, pushConfigId);
   }
-  call(apiKey: string, identity: string, destination: string, caller: string) {
-    return InfoBipNativeSdk.call(apiKey, identity, destination, caller);
+  call(
+    apiKey: string,
+    webRTCToken: string,
+    identity: string,
+    destination: string,
+    caller: string
+  ) {
+    return InfoBipNativeSdk.call(
+      apiKey,
+      webRTCToken,
+      identity,
+      destination,
+      caller
+    );
   }
 
   // call(phoneNumber: string, headers: Record<string, string>) {

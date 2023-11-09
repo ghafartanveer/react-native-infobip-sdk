@@ -17,9 +17,11 @@
 
 // + (void)relayVoipPushNotification:(NSDictionary *)pushInfo;
 - (void)handleIncomingCall:(NSDictionary *)pushInfo;
-- (void)registerPushNotification:(PKPushCredentials *)credentials;
+//- (void)registerPushNotification:(PKPushCredentials *)credentials;
+- (void)registerPushCredentials:(PKPushCredentials *)credentials;
 //+ (InfobipSdkManager *)shared;
 @property (class, retain) InfobipSdkManager *shared;
+
 
 
 
