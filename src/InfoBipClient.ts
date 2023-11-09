@@ -50,10 +50,14 @@ export class InfoBipClient {
   registerPushNotification(token: string, pushConfigId: string) {
     return InfoBipNativeSdk.registerPushNotification(token, pushConfigId);
   }
+  // call(apiKey: string, webRTCToken: string, identity: string, destination: string, caller: string) {
+  //   return InfoBipNativeSdk.call(apiKey, webRTCToken, identity, destination, caller);
+  // }
   call(
     apiKey: string,
     webRTCToken: string,
     identity: string,
+    contactId: string,
     destination: string,
     caller: string
   ) {
@@ -61,6 +65,7 @@ export class InfoBipClient {
       apiKey,
       webRTCToken,
       identity,
+      contactId,
       destination,
       caller
     );

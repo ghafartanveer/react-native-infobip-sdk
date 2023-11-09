@@ -22,6 +22,7 @@ RCT_EXTERN_METHOD(logout)
 RCT_EXTERN_METHOD(call:(nonnull NSString *)apiKey
                   token:(nonnull NSString *)token
                   identity:(nonnull NSString *)identity
+                  contactId:(nonnull NSString *)contactId
                   destination:(nonnull NSString *)destination
                   caller:(nonnull NSString *)caller
                   )

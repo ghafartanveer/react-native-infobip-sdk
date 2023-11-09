@@ -28,7 +28,11 @@ import InfobipRTC
 
 @objc(InfobipSdkManager)
 
-final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener {
+final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
+    
+    
+    
+    
     
     var identity: String {
         return UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
@@ -45,7 +49,8 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener {
     
     private var hasListeners : Bool = false
     var incomingWebrtcCall: IncomingWebrtcCall?
-    var outgoingCall: PhoneCall?
+//    var outgoingCall: PhoneCall?
+    var outgoingCall: ApplicationCall?
     
     
     @objc static func shared() -> InfobipSdkManager {
@@ -89,20 +94,35 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener {
     }
     //    1EF75BA5-C229-4B96-9730-28DBECFFBF72
     
-    @objc func call(_ apiKey: String, token: String, identity: String, destination: String, caller: String) {
-        print("apiKey: \(apiKey)")
+    @objc func call(_ apiKey: String, token: String, identity: String, contactId: String, destination: String, caller: String) {
+        print("contactId: \(contactId)")
         //        print("identity: \(identity)")
-        print("push identity: \(self.identity)")
-        print("destination: \(destination)")
-        print("caller: \(caller)")
-        let callPhoneRequest = CallPhoneRequest(token, destination: destination, phoneCallEventListener: self)
-        //        callPhoneRequest.debug = true
-        let phoneCallOptions = PhoneCallOptions(from: caller)
-        do {
-            self.outgoingCall = try self.infobipRTC.callPhone(callPhoneRequest, phoneCallOptions)
-        } catch let ex {
-            print(ex.localizedDescription)
-        }
+//        print("push identity: \(self.identity)")
+//        print("destination: \(destination)")
+//        print("caller: \(caller)")
+        
+        
+        // Old method...
+        //        let callPhoneRequest = CallPhoneRequest(token, destination: destination, phoneCallEventListener: self)
+        
+        let callApplicationRequest = CallApplicationRequest(token, applicationId: "staging", applicationCallEventListener: self)//CallApplicationRequest(token, applicationId: "staging", phoneCallEventListener: self)
+        
+        // Old method...
+        //        let phoneCallOptions = PhoneCallOptions(from: caller)
+        
+        let customData = ["contactId": contactId, "fromNumber": caller, "toNumber": destination]
+        let applicationCallOptions = ApplicationCallOptions(audio: true, customData: customData, entityId: identity)
+        
+        
+//        do {
+            // Old method...
+//            self.outgoingCall = try self.infobipRTC.callPhone(callApplicationRequest, applicationCallOptions)
+            
+            // New method...
+//            self.outgoingCall = try self.infobipRTC.callApplication(callApplicationRequest, applicationCallOptions)
+//        } catch let ex {
+//            print(ex.localizedDescription)
+//        }
     }
     
     @objc func handleIncomingCall(payload: PKPushPayload) {
@@ -222,9 +242,84 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener {
 
 
 
-extension InfobipSdkManager: WebrtcCallEventListener {
+extension InfobipSdkManager: WebrtcCallEventListener, ApplicationCallEventListener {
     func onScreenShareRemoved(_ screenShareRemovedEvent: ScreenShareRemovedEvent) {
         
+    }
+    func onConferenceJoined(_ conferenceJoinedEvent: ConferenceJoinedEvent) {
+        print("event triggered: ", conferenceJoinedEvent)
+    }
+    
+    func onConferenceLeft(_ conferenceLeftEvent: ConferenceLeftEvent) {
+        print("conferenceLeftEvent triggered: ", conferenceLeftEvent)
+    }
+    
+    func onParticipantJoining(_ participantJoiningEvent: ParticipantJoiningEvent) {
+        print("participantJoiningEvent triggered: ", participantJoiningEvent)
+    }
+    
+    func onParticipantJoined(_ participantJoinedEvent: ParticipantJoinedEvent) {
+        print("participantJoinedEvent triggered: ", participantJoinedEvent)
+    }
+    
+    func onParticipantLeft(_ participantLeftEvent: ParticipantLeftEvent) {
+        print("participantLeftEvent triggered: ", participantLeftEvent)
+    }
+    
+    func onParticipantCameraVideoAdded(_ participantCameraVideoAddedEvent: ParticipantCameraVideoAddedEvent) {
+        print("participantCameraVideoAddedEvent triggered: ", participantCameraVideoAddedEvent)
+    }
+    
+    func onParticipantCameraVideoRemoved(_ participantCameraVideoRemovedEvent: ParticipantCameraVideoRemovedEvent) {
+        print("participantCameraVideoRemovedEvent triggered: ", participantCameraVideoRemovedEvent)
+    }
+    
+    func onParticipantScreenShareAdded(_ participantScreenShareAddedEvent: ParticipantScreenShareAddedEvent) {
+        print("participantScreenShareAddedEvent triggered: ", participantScreenShareAddedEvent)
+    }
+    
+    func onParticipantScreenShareRemoved(_ participantScreenShareRemovedEvent: ParticipantScreenShareRemovedEvent) {
+        print("participantScreenShareRemovedEvent triggered: ", participantScreenShareRemovedEvent)
+    }
+    
+    func onParticipantMuted(_ participantMutedEvent: ParticipantMutedEvent) {
+        print("participantMutedEvent triggered: ", participantMutedEvent)
+    }
+    
+    func onParticipantUnmuted(_ participantUnmutedEvent: ParticipantUnmutedEvent) {
+        print("participantUnmutedEvent triggered: ", participantUnmutedEvent)
+    }
+    
+    func onParticipantDeaf(_ participantDeafEvent: ParticipantDeafEvent) {
+        print("participantDeafEvent triggered: ", participantDeafEvent)
+    }
+    
+    func onParticipantUndeaf(_ participantUndeafEvent: ParticipantUndeafEvent) {
+        print("participantUndeafEvent triggered: ", participantUndeafEvent)
+    }
+    
+    func onParticipantStartedTalking(_ participantStartedTalkingEvent: ParticipantStartedTalkingEvent) {
+        print("participantStartedTalkingEvent triggered: ", participantStartedTalkingEvent)
+    }
+    
+    func onParticipantStoppedTalking(_ participantStoppedTalkingEvent: ParticipantStoppedTalkingEvent) {
+        print("participantStoppedTalkingEvent triggered: ", participantStoppedTalkingEvent)
+    }
+    
+    func onDialogJoined(_ dialogJoinedEvent: DialogJoinedEvent) {
+        print("dialogJoinedEvent triggered: ", dialogJoinedEvent)
+    }
+    
+    func onDialogLeft(_ dialogLeftEvent: DialogLeftEvent) {
+        print("dialogLeftEvent triggered: ", dialogLeftEvent)
+    }
+    
+    func onReconnecting(_ callReconnectingEvent: CallReconnectingEvent) {
+        print("callReconnectingEvent triggered: ", callReconnectingEvent)
+    }
+    
+    func onReconnected(_ callReconnectedEvent: CallReconnectedEvent) {
+        print("callReconnectedEvent triggered: ", callReconnectedEvent)
     }
     
     func onRinging(_ callRingingEvent: CallRingingEvent) {
