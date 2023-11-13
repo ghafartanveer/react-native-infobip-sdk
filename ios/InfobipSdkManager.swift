@@ -3,6 +3,7 @@ import PushKit
 import Foundation
 import InfobipRTC
 
+
 // TODO: Replace with InfoBip
 // protocol TelnyxEventHandling: AnyObject {
 //     // Login
@@ -23,16 +24,57 @@ import InfobipRTC
 //     func onIncomingCallAnswered(_ data: [String: Any])
 //     func onIncomingCallInvalid(_ data: [String: Any])
 //     func onIncomingCallRejected(_ data: [String: Any])
-// 10EA4686-9CDF-4E58-8F7F-D599A023482C
 // }
 
 @objc(InfobipSdkManager)
 
-final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
+final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, IncomingApplicationCallEventListener{
+    func onIncomingApplicationCall(_ incomingApplicationCallEvent: IncomingApplicationCallEvent) {
+        
+        let body = convertIncomingCallToObject(InfobipSdkManager.incomingPayload)
+        sendEvent(withName: "onIncomingCall", body: "");
+    }
+
+    func convertToDictionary(text: String) -> [String: Any]? {
+        if let data = text.data(using: .utf8) {
+            do {
+                return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
+        return nil
+    }
+    
+    private func convertIncomingCallToObject(_ payload: PKPushPayload!) -> [String: Any] {
+        let objCall = payload.dictionaryPayload
+        
+        
+        let callId = objCall["callId"] as? String;
+        let callerName = objCall["displayName"] as? String;
+        let callerPhone = objCall["source"] as? String;
+        let customDataString = objCall["customData"] as? String ?? "";
+        
+        let customData = convertToDictionary(text: customDataString)
+        let contactId = customData?["contactId"] as? String ?? ""
+        
+        
+        let body: [String: Any] = [
+            "callId": callId ?? "",
+            "callerPhone": callerPhone ?? "",
+            "callerName": callerName ?? "",
+            "callerId": contactId ,
+        ];
+        
+        return body;
+    }
+    
+    
     var identity: String {
         return UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
     }
     static var pushCredentials: PKPushCredentials?
+    static var incomingPayload: PKPushPayload?
     
     var infobipRTC: InfobipRTC {
         get {
@@ -50,7 +92,6 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
     
     private var hasListeners : Bool = false
     var incomingWebrtcCall: IncomingWebrtcCall?
-    //    var outgoingCall: PhoneCall?
     var outgoingCall: ApplicationCall?
     
     
@@ -93,42 +134,24 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
         
         super.stopObserving()
     }
-    //    1EF75BA5-C229-4B96-9730-28DBECFFBF72
     
     @objc func call(_ apiKey: String, token: String, identity: String, contactId: String, destination: String, caller: String) {
-        print("contactId: \(contactId)")
-        //        print("identity: \(identity)")
-        //        print("push identity: \(self.identity)")
-        //        print("destination: \(destination)")
-        //        print("caller: \(caller)")
-        
-        
-        // Old method...
-        //        let callPhoneRequest = CallPhoneRequest(token, destination: destination, phoneCallEventListener: self)
-        
-        let callApplicationRequest = CallApplicationRequest(token, applicationId: "staging", applicationCallEventListener: self)//CallApplicationRequest(token, applicationId: "staging", phoneCallEventListener: self)
-        
-        // Old method...
-        //        let phoneCallOptions = PhoneCallOptions(from: caller)
+        let callApplicationRequest = CallApplicationRequest(token, applicationId: "staging", applicationCallEventListener: self)
         
         let customData = ["contactId": contactId, "fromNumber": caller, "toNumber": destination]
         let applicationCallOptions = ApplicationCallOptions(audio: true, customData: customData, entityId: identity)
         
-        
         do {
-            // Old method...
-            //            self.outgoingCall = try self.infobipRTC.callPhone(callApplicationRequest, applicationCallOptions)
-            
-            // New method...
             self.outgoingCall = try self.infobipRTC.callApplication(callApplicationRequest, applicationCallOptions)
         } catch let ex {
             print("outgoingCall (error) ===> ", ex.localizedDescription);
         }
     }
     
-    @objc func handleIncomingCall(payload: PKPushPayload) {
-        if self.infobipRTC.isIncomingCall(payload) {
-            infobipRTC.handleIncomingCall(payload, self)
+    @objc func handleIncomingCall(_ payload: PKPushPayload) {
+        if self.infobipRTC.isIncomingApplicationCall(payload) {
+            InfobipSdkManager.incomingPayload = payload
+            infobipRTC.handleIncomingApplicationCall(payload, self)
         }
     }
     
@@ -204,15 +227,11 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
     //                }
     //            }
     
-    //    @objc func enablePushNotification(_ apiKey: String, token: String, pushCredentials: PKPushCredentials, pushConfigId: String) {
-    
     // commented just to store the pk credentials in the veriable in the same new method
     @objc func registerPushNotification(_ token: String, pushConfigId: String) {
         if let credentials = InfobipSdkManager.pushCredentials{
-            //            let configId = "768d1685-cde7-4a8e-b22d-317e9a9faff9"
             print("push identity: \(self.identity)")
-            let debug = true//self.isDebug()
-            //                    self.infobipRTC.enablePushNotification(token, pushCredentials: credentials, debug: debug, pushConfigId: configId)
+            let debug = true
             self.infobipRTC.enablePushNotification(token, pushCredentials: credentials, debug: debug, pushConfigId: pushConfigId) { result in
                 print("enablePushNotification result : \(result.status)")
                 print("enablePushNotification result : \(result.message)")
@@ -225,15 +244,6 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
     }
     @objc func registerPushCredentials(_ credentials: PKPushCredentials) {
         InfobipSdkManager.pushCredentials = credentials
-        //        let configId = "768d1685-cde7-4a8e-b22d-317e9a9faff9"
-        //        print("push identity: \(self.identity)")
-        //        let debug = true//self.isDebug()
-        ////                    self.infobipRTC.enablePushNotification(token, pushCredentials: credentials, debug: debug, pushConfigId: configId)
-        //                    self.infobipRTC.enablePushNotification(token, pushCredentials: credentials, debug: debug, pushConfigId: configId) { result in
-        //                        print("enablePushNotification result : \(result.status)")
-        //                        print("enablePushNotification result : \(result.message)")
-        //
-        //                    }
     }
     
     @objc func isDebug() -> Bool {
