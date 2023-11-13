@@ -29,11 +29,6 @@ import InfobipRTC
 @objc(InfobipSdkManager)
 
 final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
-    
-    
-    
-    
-    
     var identity: String {
         return UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
     }
@@ -47,9 +42,15 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
     
     private let audioDeviceManager = AudioDeviceManager()
     
+    override init() {
+        super.init()
+        audioDeviceManager.delegate = self
+    }
+    
+    
     private var hasListeners : Bool = false
     var incomingWebrtcCall: IncomingWebrtcCall?
-//    var outgoingCall: PhoneCall?
+    //    var outgoingCall: PhoneCall?
     var outgoingCall: ApplicationCall?
     
     
@@ -97,9 +98,9 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
     @objc func call(_ apiKey: String, token: String, identity: String, contactId: String, destination: String, caller: String) {
         print("contactId: \(contactId)")
         //        print("identity: \(identity)")
-//        print("push identity: \(self.identity)")
-//        print("destination: \(destination)")
-//        print("caller: \(caller)")
+        //        print("push identity: \(self.identity)")
+        //        print("destination: \(destination)")
+        //        print("caller: \(caller)")
         
         
         // Old method...
@@ -114,15 +115,15 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
         let applicationCallOptions = ApplicationCallOptions(audio: true, customData: customData, entityId: identity)
         
         
-//        do {
+        do {
             // Old method...
-//            self.outgoingCall = try self.infobipRTC.callPhone(callApplicationRequest, applicationCallOptions)
+            //            self.outgoingCall = try self.infobipRTC.callPhone(callApplicationRequest, applicationCallOptions)
             
             // New method...
-//            self.outgoingCall = try self.infobipRTC.callApplication(callApplicationRequest, applicationCallOptions)
-//        } catch let ex {
-//            print(ex.localizedDescription)
-//        }
+            self.outgoingCall = try self.infobipRTC.callApplication(callApplicationRequest, applicationCallOptions)
+        } catch let ex {
+            print("outgoingCall (error) ===> ", ex.localizedDescription);
+        }
     }
     
     @objc func handleIncomingCall(payload: PKPushPayload) {
@@ -182,6 +183,10 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener{
         } else if let outgoingCall = self.outgoingCall {
             outgoingCall.hangup()
         }
+    }
+    
+    @objc func setAudioDevice(_ device: Int) {
+        audioDeviceManager.setAudioDevice(type: device)
     }
     
     //        @objc func registerPushNotification(_ apiKey: String, deviceToken: String, identity: String) {
@@ -323,14 +328,16 @@ extension InfobipSdkManager: WebrtcCallEventListener, ApplicationCallEventListen
     }
     
     func onRinging(_ callRingingEvent: CallRingingEvent) {
+        audioDeviceManager.isBluetoothDeviceConnected()
         print("on ringing outgoing")
     }
     
     func onEarlyMedia(_ callEarlyMediaEvent: CallEarlyMediaEvent) {
-        
+        print("callEarlyMediaEvent triggered ==> ", callEarlyMediaEvent)
     }
     
     func onEstablished(_ callEstablishedEvent: CallEstablishedEvent) {
+        audioDeviceManager.isBluetoothDeviceConnected()
         
     }
     
@@ -399,6 +406,12 @@ extension InfobipSdkManager: IncomingCallEventListener {
     
     
     
+}
+
+extension InfobipSdkManager: AudioDeviceManagerDelegate {
+    func didChangeHeadphonesState(connected: Bool) {
+        sendEvent(withName: "headphonesStateChanged", body: ["connected": connected])
+    }
 }
 
 class WebrtcCallListener:  WebrtcCallEventListener{
