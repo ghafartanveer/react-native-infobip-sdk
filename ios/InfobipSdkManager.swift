@@ -29,11 +29,6 @@ import InfobipRTC
 @objc(InfobipSdkManager)
 
 final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, IncomingApplicationCallEventListener{
-    func onIncomingApplicationCall(_ incomingApplicationCallEvent: IncomingApplicationCallEvent) {
-        
-        let body = convertIncomingCallToObject(InfobipSdkManager.incomingPayload)
-        sendEvent(withName: "onIncomingCall", body: "");
-    }
 
     func convertToDictionary(text: String) -> [String: Any]? {
         if let data = text.data(using: .utf8) {
@@ -82,22 +77,25 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         }
     }
     
-    private let audioDeviceManager = AudioDeviceManager()
+     let audioDeviceManager = AudioDeviceManager()
     
     override init() {
         super.init()
         audioDeviceManager.delegate = self
+        InfobipSdkManager.shared = self
     }
     
     
     private var hasListeners : Bool = false
     var incomingWebrtcCall: IncomingWebrtcCall?
     var outgoingCall: ApplicationCall?
+    var incomingApplicationCall: IncomingApplicationCall?
     
+    static var shared: InfobipSdkManager?
     
-    @objc static func shared() -> InfobipSdkManager {
-        return InfobipSdkManager()
-    }
+//    @objc static func shared() -> InfobipSdkManager {
+//        return InfobipSdkManager()
+//    }
     
     override func supportedEvents() -> [String] {
         return [
@@ -148,27 +146,29 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         }
     }
     
-    @objc func handleIncomingCall(_ payload: PKPushPayload) {
-        if self.infobipRTC.isIncomingApplicationCall(payload) {
+    @objc static func handleIncomingCall(_ payload: PKPushPayload) {
+        if shared!.infobipRTC.isIncomingApplicationCall(payload) {
+                
             InfobipSdkManager.incomingPayload = payload
-            infobipRTC.handleIncomingApplicationCall(payload, self)
+            shared?.infobipRTC.handleIncomingApplicationCall(payload, shared!)
         }
     }
     
     @objc func answer() {
-        if let incomingCall = self.incomingWebrtcCall {
+        if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             incomingCall.accept()
         }
     }
     
     @objc func reject() {
-        if let incomingCall = self.incomingWebrtcCall {
+//        sendEvent(withName: "onIncomingCallRejected", body: data);
+        if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             incomingCall.decline()
         }
     }
     
     @objc func mute() {
-        if let incomingCall = self.incomingWebrtcCall {
+            if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             do {
                 try incomingCall.mute(true)
             } catch _ {
@@ -184,7 +184,7 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
     }
     
     @objc func unmute() {
-        if let incomingCall = self.incomingWebrtcCall {
+        if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             do {
                 try incomingCall.mute(false)
             } catch _ {
@@ -201,7 +201,7 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
     
     @objc func hangup() {
         print("hangup called...")
-        if let incomingCall = self.incomingWebrtcCall {
+        if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             incomingCall.hangup()
         } else if let outgoingCall = self.outgoingCall {
             outgoingCall.hangup()
@@ -211,7 +211,7 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
     @objc func setAudioDevice(_ device: Int) {
         audioDeviceManager.setAudioDevice(type: device)
     }
-    
+
     //        @objc func registerPushNotification(_ apiKey: String, deviceToken: String, identity: String) {
     //            print("registerPushNotification called...")
     //            APIManager.obtainToken(apiKey: apiKey, parameters: ["identity": "\(identity)"]) { APIResponse in
@@ -242,8 +242,16 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         }
         
     }
-    @objc func registerPushCredentials(_ credentials: PKPushCredentials) {
+    @objc static func registerPushCredentials(_ credentials: PKPushCredentials) {
         InfobipSdkManager.pushCredentials = credentials
+    }
+    
+    func onIncomingApplicationCall(_ incomingApplicationCallEvent: IncomingApplicationCallEvent) {
+        let body = convertIncomingCallToObject(InfobipSdkManager.incomingPayload)
+        InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCall", body: body);
+
+        InfobipSdkManager.shared?.incomingApplicationCall = incomingApplicationCallEvent.incomingApplicationCall
+        InfobipSdkManager.shared?.incomingApplicationCall!.applicationCallEventListener = WebrtcCallListener(InfobipSdkManager.shared!.incomingApplicationCall!)
     }
     
     @objc func isDebug() -> Bool {
@@ -347,8 +355,8 @@ extension InfobipSdkManager: WebrtcCallEventListener, ApplicationCallEventListen
     }
     
     func onEstablished(_ callEstablishedEvent: CallEstablishedEvent) {
-        audioDeviceManager.isBluetoothDeviceConnected()
-        
+//        audioDeviceManager.isBluetoothDeviceConnected()
+//        InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCallAnswered", body: "");
     }
     
     func onCameraVideoAdded(_ cameraVideoAddedEvent: CameraVideoAddedEvent) {
@@ -397,13 +405,11 @@ extension InfobipSdkManager: WebrtcCallEventListener, ApplicationCallEventListen
     
     func onHangup(_ callHangupEvent: CallHangupEvent) {
         print("hangup CallHangupEvent called...")
-        // RCTEventEmitter().sendEvent(withName: "onOutgoingCallHangup", body: "")
-        sendEvent(withName: "onOutgoingCallHangup", body: "")
-        //        sendEvent(withName: "Infobip-onOutgoingCallHangup", body: data)
+        InfobipSdkManager.shared?.sendEvent(withName: "onOutgoingCallHangup", body: "")
     }
     
     func onError(_ errorEvent: ErrorEvent) {
-        
+        InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCallInvalid", body: "");
     }
 }
 
@@ -411,7 +417,7 @@ extension InfobipSdkManager: IncomingCallEventListener {
     
     func onIncomingWebrtcCall(_ incomingWebrtcCallEvent: IncomingWebrtcCallEvent) {
         self.incomingWebrtcCall = incomingWebrtcCallEvent.incomingWebrtcCall
-        self.incomingWebrtcCall!.webrtcCallEventListener = WebrtcCallListener(self.incomingWebrtcCall!)
+//        self.incomingWebrtcCall!.webrtcCallEventListener = WebrtcCallListener(self.incomingWebrtcCall!)
     }
     
     
@@ -424,9 +430,40 @@ extension InfobipSdkManager: AudioDeviceManagerDelegate {
     }
 }
 
-class WebrtcCallListener:  WebrtcCallEventListener{
+@objc(WebrtcCallListener)
+
+class WebrtcCallListener: RCTEventEmitter, ApplicationCallEventListener{
+    func onRinging(_ callRingingEvent: CallRingingEvent) {
+        print("incoming call on ringing")
+    }
+    
+    func onEstablished(_ callEstablishedEvent: CallEstablishedEvent) {
+        print("on call established...")
+        InfobipSdkManager.shared?.audioDeviceManager.isBluetoothDeviceConnected()
+        InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCallAnswered", body: "");
+    }
+    
+    func onHangup(_ callHangupEvent: CallHangupEvent) {
+        print("incoming call hang up")
+//        sendEvent(withName: "onIncomingCallHangup", body: "")
+//        WebrtcCallListener.shared?.sendEvent(withName: "onIncomingCallHangup", body: "")
+        InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCallHangup", body: "")
+    }
+    
+    func onError(_ errorEvent: ErrorEvent) {
+        print("on error (incoming...)");
+    }
+    
+    func onConferenceJoined(_ conferenceJoinedEvent: ConferenceJoinedEvent) {
+        print("on joined (incoming...)");
+    }
+    
+    func onEarlyMedia(_ callEarlyMediaEvent: CallEarlyMediaEvent) {
+        print("on EarlyMedia (incoming...)");
+    }
+    
     func onCameraVideoAdded(_ cameraVideoAddedEvent: CameraVideoAddedEvent) {
-        
+    
     }
     
     func onCameraVideoUpdated(_ cameraVideoUpdatedEvent: CameraVideoUpdatedEvent) {
@@ -445,54 +482,125 @@ class WebrtcCallListener:  WebrtcCallEventListener{
         
     }
     
-    func onRemoteCameraVideoAdded(_ cameraVideoAddedEvent: CameraVideoAddedEvent) {
+    func onConferenceLeft(_ conferenceLeftEvent: ConferenceLeftEvent) {
         
     }
     
-    func onRemoteCameraVideoRemoved() {
+    func onParticipantJoining(_ participantJoiningEvent: ParticipantJoiningEvent) {
         
     }
     
-    func onRemoteScreenShareAdded(_ screenShareAddedEvent: ScreenShareAddedEvent) {
+    func onParticipantJoined(_ participantJoinedEvent: ParticipantJoinedEvent) {
         
     }
     
-    func onRemoteScreenShareRemoved() {
+    func onParticipantLeft(_ participantLeftEvent: ParticipantLeftEvent) {
         
     }
     
-    func onRemoteMuted() {
+    func onParticipantCameraVideoAdded(_ participantCameraVideoAddedEvent: ParticipantCameraVideoAddedEvent) {
         
     }
     
-    func onRemoteUnmuted() {
+    func onParticipantCameraVideoRemoved(_ participantCameraVideoRemovedEvent: ParticipantCameraVideoRemovedEvent) {
         
     }
     
-    func onRinging(_ callRingingEvent: CallRingingEvent) {
-        print("on ringing")
-    }
-    
-    func onEarlyMedia(_ callEarlyMediaEvent: CallEarlyMediaEvent) {
+    func onParticipantScreenShareAdded(_ participantScreenShareAddedEvent: ParticipantScreenShareAddedEvent) {
         
     }
     
-    func onEstablished(_ callEstablishedEvent: CallEstablishedEvent) {
+    func onParticipantScreenShareRemoved(_ participantScreenShareRemovedEvent: ParticipantScreenShareRemovedEvent) {
         
     }
     
-    func onHangup(_ callHangupEvent: CallHangupEvent) {
+    func onParticipantMuted(_ participantMutedEvent: ParticipantMutedEvent) {
         
     }
     
-    func onError(_ errorEvent: ErrorEvent) {
+    func onParticipantUnmuted(_ participantUnmutedEvent: ParticipantUnmutedEvent) {
         
     }
     
-    let webrtcCall : WebrtcCall
+    func onParticipantDeaf(_ participantDeafEvent: ParticipantDeafEvent) {
+        
+    }
     
-    init(_ webrtcCall: WebrtcCall) {
+    func onParticipantUndeaf(_ participantUndeafEvent: ParticipantUndeafEvent) {
+        
+    }
+    
+    func onParticipantStartedTalking(_ participantStartedTalkingEvent: ParticipantStartedTalkingEvent) {
+        
+    }
+    
+    func onParticipantStoppedTalking(_ participantStoppedTalkingEvent: ParticipantStoppedTalkingEvent) {
+        
+    }
+    
+    func onDialogJoined(_ dialogJoinedEvent: DialogJoinedEvent) {
+        
+    }
+    
+    func onDialogLeft(_ dialogLeftEvent: DialogLeftEvent) {
+        
+    }
+    
+    func onReconnecting(_ callReconnectingEvent: CallReconnectingEvent) {
+        
+    }
+    
+    func onReconnected(_ callReconnectedEvent: CallReconnectedEvent) {
+        
+    }
+    
+    let webrtcCall: IncomingApplicationCall
+    
+    static var shared: WebrtcCallListener?
+    
+    init(_ webrtcCall: IncomingApplicationCall) {
         self.webrtcCall = webrtcCall
+        super.init()
+        WebrtcCallListener.shared = self
+    }
+    
+    
+    override func supportedEvents() -> [String] {
+        return [
+            "onLogin",
+            "onLoginFailed",
+            "onLogout",
+            "onIncomingCall",
+            "onIncomingCallHangup",
+            "onIncomingCallRejected",
+            "onIncomingCallAnswered",
+            "onIncomingCallInvalid",
+            "onOutgoingCall",
+            "onOutgoingCallAnswered",
+            "onOutgoingCallRinging",
+            "onOutgoingCallRejected",
+            "onOutgoingCallHangup",
+            "onOutgoingCallInvalid",
+            "headphonesStateChanged"
+        ]
+    }
+    
+    private var hasListeners : Bool = false
+    
+    override func startObserving() {
+        print("InfobipSdk ReactNativeEventEmitter startObserving")
+        
+        hasListeners = true
+        
+        super.startObserving()
+    }
+    
+    override func stopObserving() {
+        print("InfobipSdk ReactNativeEventEmitter stopObserving")
+        
+        hasListeners = false
+        
+        super.stopObserving()
     }
 }
 
@@ -500,28 +608,28 @@ class WebrtcCallListener:  WebrtcCallEventListener{
 // final class TelnyxSdkManager: RCTEventEmitter, TelnyxEventHandling {
 // // TODO: Update InfobipSdkManager class...
 // // final class InfobipSdkManager: NSObject {
-
+//
 //   private let shared = TelnyxSdk.shared
 //     private let audioDeviceManager = AudioDeviceManager()
-
+//
 //     private var hasListeners : Bool = false
-
+//
 //     override init() {
 //         super.init()
-
+//
 //         TelnyxSdk.shared.delegate = self
 //         audioDeviceManager.delegate = self
 //     }
-
+//
 //     override static func requiresMainQueueSetup() -> Bool {
 //         return true
 //     }
-
+//
 //   // @objc(multiply:withB:withResolver:withRejecter:)
 //   // func multiply(a: Float, b: Float, resolve:RCTPromiseResolveBlock,reject:RCTPromiseRejectBlock) -> Void {
 //   //   resolve(a*b)
 //   // }
-
+//
 // // TODO: Not sure what the '!' means here...
 // // override func supportedEvents() -> [String]! {
 //     override func supportedEvents() -> [String] {
@@ -544,32 +652,32 @@ class WebrtcCallListener:  WebrtcCallEventListener{
 //             "Telnyx-headphonesStateChanged"
 //         ]
 //     }
-
+//
 //     override func startObserving() {
 //         print("TelnyxSdk ReactNativeEventEmitter startObserving")
-
+//
 //         hasListeners = true
-
+//
 //         super.startObserving()
 //     }
-
-
+//
+//
 //     override func stopObserving() {
 //         print("TelnyxSdk ReactNativeEventEmitter stopObserving")
-
+//
 //         hasListeners = false
-
+//
 //         super.stopObserving()
 //     }
-
+//
 //     @objc(login:password:token:)
-
+//
 //     @objc static func relayVoipPushNotification(_ pushInfo: [AnyHashable : Any]) {
 //         PlivoSdk.shared.relayVoipPushNotification(pushInfo: pushInfo)
 //     }
-
+//
 //     @objc(login:password:token:certificateId:)
-
+//
 //     func login(
 //         withUserName userName: String,
 //         andPassword password: String,
@@ -582,128 +690,128 @@ class WebrtcCallListener:  WebrtcCallEventListener{
 //                                   deviceToken: token,
 //                                   certificateId: certificateId)
 //     }
-
+//
 //     func callNew() {
 //         let infobipRTC: InfobipRTC = getInfobipRTCInstance()
-
+//
 //     }
-
-
-
-
+//
+//
+//
+//
 //     @objc static func processVoIPNotification(_ callId: String, pushMetaData: [String: Any]) {
 //         TelnyxSdk.shared.processVoIPNotification(callId: callId, pushMetaData: pushMetaData)
 //     }
-
+//
 //     @objc static func cancelAllCalls() {
 //         TelnyxSdk.shared.hangup()
 //     }
-
+//
 //     // @objc(call:headers:)
 //     // func call(withDest dest: String, andHeaders headers: [AnyHashable: Any]) -> PlivoOutgoing? {
 //     //     return shared.call(withDest: dest, andHeaders: headers)
 //     // }
-
+//
 //      @objc func reconnect() {
 //         shared.reconnect()
 //     }
-
+//
 //     @objc func logout() {
 //         shared.logout()
 //     }
-
+//
 //     @objc func mute() {
 //         shared.mute()
 //     }
-
+//
 //     @objc func unmute() {
 //         shared.unmute()
 //     }
-
+//
 //     @objc func answer() {
 //         shared.answer()
 //     }
-
+//
 //     @objc func hangup() {
 //         shared.hangup()
 //     }
-
+//
 //     @objc func reject() {
 //         shared.reject()
 //     }
-
+//
 //     @objc func setAudioDevice(_ device: Int) {
 //         audioDeviceManager.setAudioDevice(type: device)
 //     }
-
+//
 //     func onLogin() {
 //         sendEvent(withName: "Plivo-onLogin", body:nil);
 //     }
-
+//
 //     func onLoginFailed() {
 //         sendEvent(withName: "Plivo-onLoginFailed", body:nil);
 //     }
-
+//
 //     func onLogout() {
 //         sendEvent(withName: "Plivo-onLogout", body:nil);
 //     }
-
+//
 //     // func onLoginFailedWithError(_ error: Error!) {
 //     //     let body = ["error": error.localizedDescription]
 //     //     sendEvent(withName: "Telnyx-onLoginFailed", body: body);
 //     // }
-
+//
 //     func onLoginFailedWithError(_ error: Error!) {
 //         sendEvent(withName: "Plivo-onLoginFailed", body:nil);
 //     }
-
+//
 //     func onCalling(_ data: [String: Any]) {
 //         audioDeviceManager.isBluetoothDeviceConnected()
 //         sendEvent(withName: "Plivo-onOutgoingCall", body: data);
 //     }
-
+//
 //     func onOutgoingCallRejected(_ data: [String: Any]) {
 //         sendEvent(withName: "Plivo-onOutgoingCallRejected", body: data);
 //     }
-
+//
 //     func onOutgoingCallInvalid(_ data: [String: Any]) {
 //         sendEvent(withName: "Plivo-onOutgoingCallInvalid", body: data);
 //     }
-
+//
 //     func onOutgoingCallRinging(_ data: [String: Any]) {
 //         sendEvent(withName: "Plivo-onOutgoingCallRinging", body: data);
 //     }
-
+//
 //     func onOutgoingCallHangup(_ data: [String: Any]) {
 //         sendEvent(withName: "Plivo-onOutgoingCallHangup", body: data);
 //     }
-
+//
 //     func onOutgoingCallAnswered(_ data: [String: Any]) {
 //         sendEvent(withName: "Plivo-onOutgoingCallAnswered", body: data);
 //     }
-
+//
 //     func onIncomingCall(_ data: [String: Any]) {
 //         sendEvent(withName: "Plivo-onIncomingCall", body: data);
 //     }
-
+//
 //     func onIncomingCallHangup(_ data: [String: Any]) {
 //         sendEvent(withName: "Plivo-onIncomingCallHangup", body: data);
 //     }
-
+//
 //     func onIncomingCallAnswered(_ data: [String: Any]) {
 //         audioDeviceManager.isBluetoothDeviceConnected()
 //         sendEvent(withName: "Plivo-onIncomingCallAnswered", body: data);
 //     }
-
+//
 //     func onIncomingCallInvalid(_ data: [String: Any]) {
 //         sendEvent(withName: "Plivo-onIncomingCallInvalid", body: data);
 //     }
-
+//
 //     func onIncomingCallRejected(_ data: [String: Any]) {
 //         sendEvent(withName: "Plivo-onIncomingCallRejected", body: data);
 //     }
 // }
-
+//
 // extension PlivoSdkManager: AudioDeviceManagerDelegate {
 //     func didChangeHeadphonesState(connected: Bool) {
 //         sendEvent(withName: "Plivo-headphonesStateChanged", body: ["connected": connected])

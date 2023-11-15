@@ -1,7 +1,7 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTEventEmitter.h>
 
-@interface RCT_EXTERN_MODULE(InfobipSdkManager, NSObject)
+@interface RCT_EXTERN_MODULE(InfobipSdkManager, RCTEventEmitter)
 
 //RCT_EXTERN_METHOD(call)
 

@@ -16,11 +16,11 @@
 //             certificateId:(NSString *)certificateId;
 
 // + (void)relayVoipPushNotification:(NSDictionary *)pushInfo;
-- (void)handleIncomingCall:(NSDictionary *)pushInfo;
++ (void)handleIncomingCall:(PKPushPayload *)pushInfo;
 //- (void)registerPushNotification:(PKPushCredentials *)credentials;
-- (void)registerPushCredentials:(PKPushCredentials *)credentials;
++ (void)registerPushCredentials:(PKPushCredentials *)credentials;
 //+ (InfobipSdkManager *)shared;
-@property (class, retain) InfobipSdkManager *shared;
+//@property (class, retain) InfobipSdkManager *shared;
 
 
 
