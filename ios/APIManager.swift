@@ -31,4 +31,4 @@ class APIManager {
         dataTask.resume()
     }
 
-}   
+}

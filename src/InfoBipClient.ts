@@ -8,17 +8,17 @@ enum CallState {
   TERMINATED = 3,
 }
 
-interface PlivoLoginEvent {}
-interface PlivoLogoutEvent {}
+interface InfoBipLoginEvent {}
+interface InfoBipLogoutEvent {}
 
-interface PlivoOutgoingEvent {
+interface InfoBipOutgoingEvent {
   callId: string;
   state: CallState;
   isOnHold: boolean;
   muted: boolean;
 }
 
-interface PlivoIncomingEvent {
+interface InfoBipIncomingEvent {
   callId: string;
   state: CallState;
   isOnHold: boolean;
@@ -28,7 +28,7 @@ interface PlivoIncomingEvent {
 type Handler<T> = (data: T) => void;
 
 const createListener = <T>(event: string, handler: Handler<T>) => {
-  // const listener = emitter.addListener(`Plivo-${event}`, handler);
+  // const listener = emitter.addListener(`InfoBip-${event}`, handler);
   const listener = emitter.addListener(`${event}`, handler);
   return () => listener.remove();
 };
@@ -44,18 +44,17 @@ export class InfoBipClient {
   ) {
     return InfoBipNativeSdk.login(username, password, fcmToken, certificateId);
   }
-  // registerPushNotification(token: string, identity: string) {
-  //   return InfoBipNativeSdk.registerPushNotification(token, identity);
-  // }
-  registerPushNotification(token: string, pushConfigId: string) {
-    return InfoBipNativeSdk.registerPushNotification(token, pushConfigId);
+  registerPushNotification(token: string, pushConfigId: string, debug: string) {
+    return InfoBipNativeSdk.registerPushNotification(
+      token,
+      pushConfigId,
+      debug
+    );
   }
-  // call(apiKey: string, webRTCToken: string, identity: string, destination: string, caller: string) {
-  //   return InfoBipNativeSdk.call(apiKey, webRTCToken, identity, destination, caller);
-  // }
   call(
     apiKey: string,
     webRTCToken: string,
+    environment: string,
     identity: string,
     contactId: string,
     destination: string,
@@ -64,16 +63,13 @@ export class InfoBipClient {
     return InfoBipNativeSdk.call(
       apiKey,
       webRTCToken,
+      environment,
       identity,
       contactId,
       destination,
       caller
     );
   }
-
-  // call(phoneNumber: string, headers: Record<string, string>) {
-  //   return InfoBipNativeSdk.call(phoneNumber, headers);
-  // }
 
   reconnect() {
     InfoBipNativeSdk.reconnect();
@@ -100,6 +96,10 @@ export class InfoBipClient {
     InfoBipNativeSdk.answer();
   }
 
+  handleIncomingCall() {
+    InfoBipNativeSdk.handleIncomingCallFromCallKeep();
+  }
+
   hangup() {
     InfoBipNativeSdk.hangup();
   }
@@ -112,67 +112,67 @@ export class InfoBipClient {
     return this._isLoggedIn;
   }
 
-  onLogin(handler: Handler<PlivoLoginEvent>) {
-    return createListener('onLogin', (event: PlivoLoginEvent) => {
+  onLogin(handler: Handler<InfoBipLoginEvent>) {
+    return createListener('onLogin', (event: InfoBipLoginEvent) => {
       this._isLoggedIn = true;
 
       handler(event);
     });
   }
 
-  onLogout(handler: Handler<PlivoLogoutEvent>) {
-    return createListener('onLogout', (event: PlivoLogoutEvent) => {
+  onLogout(handler: Handler<InfoBipLogoutEvent>) {
+    return createListener('onLogout', (event: InfoBipLogoutEvent) => {
       this._isLoggedIn = false;
 
       handler(event);
     });
   }
 
-  onLoginFailed(handler: Handler<PlivoLoginEvent>) {
+  onLoginFailed(handler: Handler<InfoBipLoginEvent>) {
     return createListener('onLoginFailed', handler);
   }
 
-  onIncomingCall(handler: Handler<PlivoIncomingEvent>) {
+  onIncomingCall(handler: Handler<InfoBipIncomingEvent>) {
     return createListener('onIncomingCall', handler);
   }
 
-  onIncomingCallHangup(handler: Handler<PlivoIncomingEvent>) {
+  onIncomingCallHangup(handler: Handler<InfoBipIncomingEvent>) {
     return createListener('onIncomingCallHangup', handler);
   }
 
-  onIncomingCallRejected(handler: Handler<PlivoIncomingEvent>) {
+  onIncomingCallRejected(handler: Handler<InfoBipIncomingEvent>) {
     return createListener('onIncomingCallRejected', handler);
   }
 
-  onIncomingCallInvalid(handler: Handler<PlivoIncomingEvent>) {
+  onIncomingCallInvalid(handler: Handler<InfoBipIncomingEvent>) {
     return createListener('onIncomingCallInvalid', handler);
   }
 
-  onIncomingCallAnswered(handler: Handler<PlivoIncomingEvent>) {
+  onIncomingCallAnswered(handler: Handler<InfoBipIncomingEvent>) {
     return createListener('onIncomingCallAnswered', handler);
   }
 
-  onOutgoingCall(handler: Handler<PlivoOutgoingEvent>) {
+  onOutgoingCall(handler: Handler<InfoBipOutgoingEvent>) {
     return createListener('onOutgoingCall', handler);
   }
 
-  onOutgoingCallRinging(handler: Handler<PlivoOutgoingEvent>) {
+  onOutgoingCallRinging(handler: Handler<InfoBipOutgoingEvent>) {
     return createListener('onOutgoingCallRinging', handler);
   }
 
-  onOutgoingCallAnswered(handler: Handler<PlivoOutgoingEvent>) {
+  onOutgoingCallAnswered(handler: Handler<InfoBipOutgoingEvent>) {
     return createListener('onOutgoingCallAnswered', handler);
   }
 
-  onOutgoingCallRejected(handler: Handler<PlivoOutgoingEvent>) {
+  onOutgoingCallRejected(handler: Handler<InfoBipOutgoingEvent>) {
     return createListener('onOutgoingCallRejected', handler);
   }
 
-  onOutgoingCallHangup(handler: Handler<PlivoOutgoingEvent>) {
+  onOutgoingCallHangup(handler: Handler<InfoBipOutgoingEvent>) {
     return createListener('onOutgoingCallHangup', handler);
   }
 
-  onOutgoingCallInvalid(handler: Handler<PlivoOutgoingEvent>) {
+  onOutgoingCallInvalid(handler: Handler<InfoBipOutgoingEvent>) {
     return createListener('onOutgoingCallInvalid', handler);
   }
 

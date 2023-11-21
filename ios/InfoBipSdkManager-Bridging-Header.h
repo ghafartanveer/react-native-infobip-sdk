@@ -6,27 +6,8 @@
 
 @interface InfobipSdkManager : RCTEventEmitter <RCTBridgeModule>
 
-//TODO: Need to identify where these methods are defined...
-//TODO: These methods will be used to initialize the SDK...
-
-// @interface PlivoSdkManager : RCTEventEmitter <RCTBridgeModule>
-// + (void)loginWithUsername:(NSString *)username
-//                  password:(NSString *)password
-//               deviceToken:(NSString *)deviceToken
-//             certificateId:(NSString *)certificateId;
-
-// + (void)relayVoipPushNotification:(NSDictionary *)pushInfo;
-+ (void)handleIncomingCall:(PKPushPayload *)pushInfo;
-//- (void)registerPushNotification:(PKPushCredentials *)credentials;
++ (void)handleIncomingCall:(PKPushPayload *)pushInfo completion:(void (^)(void))completion;
++ (void)setPushPayload:(PKPushPayload *)pushInfo;
 + (void)registerPushCredentials:(PKPushCredentials *)credentials;
-//+ (InfobipSdkManager *)shared;
-//@property (class, retain) InfobipSdkManager *shared;
 
-
-
-
-// @interface TelnyxSdkManager : RCTEventEmitter <RCTBridgeModule>
-// + (void)processVoIPNotification:(NSString *)callId
-//                    pushMetaData:(NSDictionary *)pushMetaData;
-// + (void)cancelAllCalls;
 @end

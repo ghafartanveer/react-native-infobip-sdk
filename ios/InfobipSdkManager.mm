@@ -3,8 +3,6 @@
 
 @interface RCT_EXTERN_MODULE(InfobipSdkManager, RCTEventEmitter)
 
-//RCT_EXTERN_METHOD(call)
-
 RCT_EXTERN_METHOD(login:(nonnull NSString *)userName
                   password:(nonnull NSString *)password
                   token:(nonnull NSString *)token
@@ -13,14 +11,9 @@ RCT_EXTERN_METHOD(login:(nonnull NSString *)userName
 RCT_EXTERN_METHOD(reconnect)
 RCT_EXTERN_METHOD(logout)
 
-// RCT_EXTERN_METHOD(call:(nonnull NSString *)apiKey
-//                   identity:(nonnull NSString *)identity
-//                   destination:(nonnull NSString *)destination
-//                   caller:(nonnull NSString *)caller
-//                   )
-
 RCT_EXTERN_METHOD(call:(nonnull NSString *)apiKey
                   token:(nonnull NSString *)token
+                  environment:(nonnull NSString *)environment
                   identity:(nonnull NSString *)identity
                   contactId:(nonnull NSString *)contactId
                   destination:(nonnull NSString *)destination
@@ -29,7 +22,10 @@ RCT_EXTERN_METHOD(call:(nonnull NSString *)apiKey
 
 RCT_EXTERN_METHOD(registerPushNotification:(nonnull NSString *)token
                   pushConfigId:(nonnull NSString *)pushConfigId
+                  debug:(nonnull NSString *)debug
                   )
+
+RCT_EXTERN_METHOD(handleIncomingCallFromCallKeep)
 
 RCT_EXTERN_METHOD(mute)
 RCT_EXTERN_METHOD(unmute)
