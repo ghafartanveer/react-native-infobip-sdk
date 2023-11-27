@@ -9,45 +9,14 @@ typealias IncomingCompletion = ()->Void
 @objc(InfobipSdkManager)
 
 final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, IncomingApplicationCallEventListener{
-
-    func convertToDictionary(text: String) -> [String: Any]? {
-        if let data = text.data(using: .utf8) {
-            do {
-                return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-            } catch {
-                print(error.localizedDescription)
-            }
-        }
-        return nil
-    }
     
-    private func convertIncomingCallToObject(_ payload: PKPushPayload!) -> [String: Any] {
-        let objCall = payload.dictionaryPayload
-        
-        
-        let callId = objCall["callId"] as? String;
-        let callerName = objCall["displayName"] as? String;
-        let callerPhone = objCall["source"] as? String;
-        let customDataString = objCall["customData"] as? String ?? "";
-        
-        let customData = convertToDictionary(text: customDataString)
-        let contactId = customData?["contactId"] as? String ?? ""
-        
-        
-        let body: [String: Any] = [
-            "callId": callId ?? "",
-            "callerPhone": callerPhone ?? "",
-            "callerName": callerName ?? "",
-            "callerId": contactId ,
-        ];
-        
-        return body;
-    }
     
     var identity: String {
         return UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
     }
     static var pushCredentials: PKPushCredentials?
+    //    static var voipToken: String?
+    static var isUserLoggedIn: Bool = false
     static var incomingPayload: PKPushPayload?
     var incomingCompletion: IncomingCompletion?
     
@@ -57,7 +26,7 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         }
     }
     
-     let audioDeviceManager = AudioDeviceManager()
+    let audioDeviceManager = AudioDeviceManager()
     
     override init() {
         super.init()
@@ -108,9 +77,13 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         super.stopObserving()
     }
     
+    @objc static func checkIfLoggedIn() -> Bool{
+        return InfobipSdkManager.isUserLoggedIn
+    }
+    
     @objc func call(_ apiKey: String, token: String, environment: String, identity: String, contactId: String, destination: String, caller: String) {
-//        AVAudioSession.sharedInstance().requestRecordPermission { granted in
-//            if(granted){
+        AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            if(granted){
                 let callApplicationRequest = CallApplicationRequest(token, applicationId: environment, applicationCallEventListener: InfobipSdkManager.shared!)
                 
                 let customData = ["contactId": contactId, "fromNumber": caller, "toNumber": destination]
@@ -121,28 +94,71 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
                 } catch let ex {
                     print("outgoingCall (error) ===> ", ex.localizedDescription);
                 }
-//            }else{
-//                print("Microphone permission not granted")
-//                InfobipSdkManager.shared?.sendEvent(withName: "onOutgoingCallHangup", body: "")
-//            }
-//        }
+            }else{
+                print("Microphone permission not granted")
+                InfobipSdkManager.shared?.sendEvent(withName: "onOutgoingCallHangup", body: "")
+            }
+        }
     }
+    //    func convertToHexString(credentials: PKPushCredentials) -> String {
+    //
+    //        let voipToken = credentials.token
+    //        let deviceToken: String = voipToken.reduce("", {$0 + String(format: "%02X", $1) })
+    //
+    //        return deviceToken
+    //    }
+    
+    func convertToDictionary(text: String) -> [String: Any]? {
+        if let data = text.data(using: .utf8) {
+            do {
+                return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
+        return nil
+    }
+    
+    func convertIncomingCallToObject(_ payload: PKPushPayload!) -> [String: Any] {
+        let objCall = payload.dictionaryPayload
+        
+        
+        let callId = objCall["callId"] as? String;
+        let callerName = objCall["displayName"] as? String;
+        let callerPhone = objCall["source"] as? String;
+        let customDataString = objCall["customData"] as? String ?? "";
+        
+        let customData = convertToDictionary(text: customDataString)
+        let contactId = customData?["contactId"] as? String ?? ""
+        
+        
+        let body: [String: Any] = [
+            "callId": callId ?? "",
+            "callerPhone": callerPhone ?? "",
+            "callerName": callerName ?? "",
+            "callerId": contactId ,
+        ];
+        
+        return body;
+    }
+    
     
     @objc func handleIncomingCallFromCallKeep() {
         let payload = InfobipSdkManager.incomingPayload
         if InfobipSdkManager.shared!.infobipRTC.isIncomingApplicationCall(payload!) {
-
+            
             InfobipSdkManager.incomingPayload = payload
             InfobipSdkManager.shared?.infobipRTC.handleIncomingApplicationCall(payload!, InfobipSdkManager.shared!)
         }
     }
     @objc static func setPushPayload(_ payload: PKPushPayload) {
         InfobipSdkManager.incomingPayload = payload
+        
     }
     @objc static func handleIncomingCall(_ payload: PKPushPayload, completion: @escaping IncomingCompletion) {
-        shared?.incomingCompletion = completion
-        if shared!.infobipRTC.isIncomingApplicationCall(payload) {
-
+        InfobipSdkManager.shared?.incomingCompletion = completion
+        if ((InfobipSdkManager.shared?.infobipRTC.isIncomingApplicationCall(payload)) != nil) {
+            
             InfobipSdkManager.incomingPayload = payload
             shared?.infobipRTC.handleIncomingApplicationCall(payload, shared!)
         }
@@ -155,14 +171,14 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
     }
     
     @objc func reject() {
-//        sendEvent(withName: "onIncomingCallRejected", body: data);
+        //        sendEvent(withName: "onIncomingCallRejected", body: data);
         if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
-            incomingCall.decline()
+            incomingCall.decline(DeclineOptions(true))
         }
     }
     
     @objc func mute() {
-            if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
+        if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             do {
                 try incomingCall.mute(true)
             } catch _ {
@@ -205,10 +221,17 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
     @objc func setAudioDevice(_ device: Int) {
         InfobipSdkManager.shared?.audioDeviceManager.setAudioDevice(type: device)
     }
-
-    @objc func registerPushNotification(_ token: String, pushConfigId: String, debug: String) {
+    
+    @objc func disablePushNotification(_ token: String) {
+        print("Logout success! --- disablePushNotification --- ")
+        InfobipSdkManager.isUserLoggedIn = false;
+        InfobipSdkManager.shared?.infobipRTC.disablePushNotification(token)
+    }
+    
+    @objc func registerPushNotification(_ token: String, pushConfigId: String) {
         if let credentials = InfobipSdkManager.pushCredentials{
-            InfobipSdkManager.shared?.infobipRTC.enablePushNotification(token, pushCredentials: credentials, debug: debug == "1", pushConfigId: pushConfigId) { result in
+            InfobipSdkManager.isUserLoggedIn = true;
+            InfobipSdkManager.shared?.infobipRTC.enablePushNotification(token, pushCredentials: credentials, debug: isDebug(), pushConfigId: pushConfigId) { result in
                 print("enablePushNotification result : \(result.status)")
                 print("enablePushNotification result : \(result.message)")
                 
@@ -220,12 +243,16 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
     }
     @objc static func registerPushCredentials(_ credentials: PKPushCredentials) {
         InfobipSdkManager.pushCredentials = credentials
+        //        let voipToken = credentials.token
+        //        let deviceToken: String = voipToken.reduce("", {$0 + String(format: "%02X", $1) })
+        //        InfobipSdkManager.voipToken = deviceToken
+        //        print("voip token is : ", InfobipSdkManager.voipToken)
     }
     
     func onIncomingApplicationCall(_ incomingApplicationCallEvent: IncomingApplicationCallEvent) {
         let body = convertIncomingCallToObject(InfobipSdkManager.incomingPayload)
         InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCall", body: body);
-
+        
         InfobipSdkManager.shared?.incomingApplicationCall = incomingApplicationCallEvent.incomingApplicationCall
         if let block = InfobipSdkManager.shared?.incomingCompletion {
             block()
@@ -236,6 +263,7 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
     @objc func isDebug() -> Bool {
 #if DEBUG
         return true
+        //        return false
 #else
         return false
 #endif
@@ -394,8 +422,8 @@ extension InfobipSdkManager: WebrtcCallEventListener, ApplicationCallEventListen
 extension InfobipSdkManager: IncomingCallEventListener {
     
     func onIncomingWebrtcCall(_ incomingWebrtcCallEvent: IncomingWebrtcCallEvent) {
-//        self.incomingWebrtcCall = incomingWebrtcCallEvent.incomingWebrtcCall
-//        self.incomingWebrtcCall!.webrtcCallEventListener = WebrtcCallListener(self.incomingWebrtcCall!)
+        //        self.incomingWebrtcCall = incomingWebrtcCallEvent.incomingWebrtcCall
+        //        self.incomingWebrtcCall!.webrtcCallEventListener = WebrtcCallListener(self.incomingWebrtcCall!)
     }
     
     
@@ -425,9 +453,10 @@ class WebrtcCallListener: RCTEventEmitter, ApplicationCallEventListener{
     
     func onHangup(_ callHangupEvent: CallHangupEvent) {
         print("incoming call hang up")
-//        sendEvent(withName: "onIncomingCallHangup", body: "")
-//        WebrtcCallListener.shared?.sendEvent(withName: "onIncomingCallHangup", body: "")
-        InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCallHangup", body: "")
+        let body = InfobipSdkManager.shared?.convertIncomingCallToObject(InfobipSdkManager.incomingPayload)
+        //        sendEvent(withName: "onIncomingCallHangup", body: "")
+        //        WebrtcCallListener.shared?.sendEvent(withName: "onIncomingCallHangup", body: "")
+        InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCallHangup", body: body)
     }
     
     func onError(_ errorEvent: ErrorEvent) {
@@ -443,7 +472,7 @@ class WebrtcCallListener: RCTEventEmitter, ApplicationCallEventListener{
     }
     
     func onCameraVideoAdded(_ cameraVideoAddedEvent: CameraVideoAddedEvent) {
-    
+        
     }
     
     func onCameraVideoUpdated(_ cameraVideoUpdatedEvent: CameraVideoUpdatedEvent) {

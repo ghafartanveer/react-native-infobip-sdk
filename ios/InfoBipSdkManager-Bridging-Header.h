@@ -9,5 +9,6 @@
 + (void)handleIncomingCall:(PKPushPayload *)pushInfo completion:(void (^)(void))completion;
 + (void)setPushPayload:(PKPushPayload *)pushInfo;
 + (void)registerPushCredentials:(PKPushCredentials *)credentials;
++ (BOOL)checkIfLoggedIn;
 
 @end

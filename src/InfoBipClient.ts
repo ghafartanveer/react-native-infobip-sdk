@@ -44,12 +44,8 @@ export class InfoBipClient {
   ) {
     return InfoBipNativeSdk.login(username, password, fcmToken, certificateId);
   }
-  registerPushNotification(token: string, pushConfigId: string, debug: string) {
-    return InfoBipNativeSdk.registerPushNotification(
-      token,
-      pushConfigId,
-      debug
-    );
+  registerPushNotification(token: string, pushConfigId: string) {
+    return InfoBipNativeSdk.registerPushNotification(token, pushConfigId);
   }
   call(
     apiKey: string,
@@ -75,8 +71,8 @@ export class InfoBipClient {
     InfoBipNativeSdk.reconnect();
   }
 
-  logout() {
-    InfoBipNativeSdk.logout();
+  logout(token: string) {
+    InfoBipNativeSdk.disablePushNotification(token);
     this._isLoggedIn = false;
   }
 

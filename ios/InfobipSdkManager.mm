@@ -9,7 +9,7 @@ RCT_EXTERN_METHOD(login:(nonnull NSString *)userName
                   certificateId:(nonnull NSString *)certificateId
                   )
 RCT_EXTERN_METHOD(reconnect)
-RCT_EXTERN_METHOD(logout)
+RCT_EXTERN_METHOD(disablePushNotification:(nonnull NSString *)token)
 
 RCT_EXTERN_METHOD(call:(nonnull NSString *)apiKey
                   token:(nonnull NSString *)token
@@ -22,7 +22,6 @@ RCT_EXTERN_METHOD(call:(nonnull NSString *)apiKey
 
 RCT_EXTERN_METHOD(registerPushNotification:(nonnull NSString *)token
                   pushConfigId:(nonnull NSString *)pushConfigId
-                  debug:(nonnull NSString *)debug
                   )
 
 RCT_EXTERN_METHOD(handleIncomingCallFromCallKeep)
