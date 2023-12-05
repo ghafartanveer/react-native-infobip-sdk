@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { InfoBipNativeSdk } from './InfoBipNativeSdk';
 import { emitter } from './events';
 
@@ -47,6 +48,17 @@ export class InfoBipClient {
   registerPushNotification(token: string, pushConfigId: string) {
     return InfoBipNativeSdk.registerPushNotification(token, pushConfigId);
   }
+  registerAndroidPushNotification(
+    fcmToken: string,
+    token: string,
+    pushConfigId: string
+  ) {
+    return InfoBipNativeSdk.registerAndroidPushNotification(
+      fcmToken,
+      token,
+      pushConfigId
+    );
+  }
   call(
     apiKey: string,
     webRTCToken: string,
@@ -56,6 +68,16 @@ export class InfoBipClient {
     destination: string,
     caller: string
   ) {
+    console.log(
+      'calling ==> ',
+      apiKey,
+      webRTCToken,
+      environment,
+      identity,
+      contactId,
+      destination,
+      caller
+    );
     return InfoBipNativeSdk.call(
       apiKey,
       webRTCToken,
@@ -92,8 +114,12 @@ export class InfoBipClient {
     InfoBipNativeSdk.answer();
   }
 
-  handleIncomingCall() {
-    InfoBipNativeSdk.handleIncomingCallFromCallKeep();
+  handleIncomingCall(payload) {
+    if (Platform.OS === 'android') {
+      InfoBipNativeSdk.handleIncomingCall(payload);
+    } else {
+      InfoBipNativeSdk.handleIncomingCallFromCallKeep();
+    }
   }
 
   hangup() {
