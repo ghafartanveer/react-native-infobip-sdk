@@ -1,23 +1,31 @@
 package com.infobipsdk;
 
+import static com.infobipsdk.ReactNativeMapConverter.convertReadableMapToMap;
+
 import android.content.Context;
 import android.media.AudioManager;
+import android.os.Handler;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableNativeMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.infobip.webrtc.sdk.api.InfobipRTC;
 import com.infobip.webrtc.sdk.api.call.ApplicationCall;
+import com.infobip.webrtc.sdk.api.call.IncomingApplicationCall;
 import com.infobip.webrtc.sdk.api.event.call.CallEarlyMediaEvent;
 import com.infobip.webrtc.sdk.api.event.call.CallEstablishedEvent;
 import com.infobip.webrtc.sdk.api.event.call.CallHangupEvent;
@@ -47,40 +55,37 @@ import com.infobip.webrtc.sdk.api.event.call.ReconnectingEvent;
 import com.infobip.webrtc.sdk.api.event.call.ScreenShareAddedEvent;
 import com.infobip.webrtc.sdk.api.event.call.ScreenShareRemovedEvent;
 import com.infobip.webrtc.sdk.api.event.listener.ApplicationCallEventListener;
+import com.infobip.webrtc.sdk.api.event.listener.EventListener;
+import com.infobip.webrtc.sdk.api.event.listener.IncomingApplicationCallEventListener;
+import com.infobip.webrtc.sdk.api.event.rtc.IncomingApplicationCallEvent;
 import com.infobip.webrtc.sdk.api.exception.ActionFailedException;
 import com.infobip.webrtc.sdk.api.exception.IllegalStatusException;
 import com.infobip.webrtc.sdk.api.exception.MissingPermissionsException;
+import com.infobip.webrtc.sdk.api.model.push.EnablePushNotificationResult;
 import com.infobip.webrtc.sdk.api.options.ApplicationCallOptions;
+import com.infobip.webrtc.sdk.api.options.DeclineOptions;
 import com.infobip.webrtc.sdk.api.request.CallApplicationRequest;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
 @ReactModule(name = InfobipSdkModule.NAME)
-public class InfobipSdkModule extends ReactContextBaseJavaModule implements ApplicationCallEventListener {
+public class InfobipSdkModule extends ReactContextBaseJavaModule implements ApplicationCallEventListener, IncomingApplicationCallEventListener {
     public static final String NAME = "InfobipSdkManager";
 
     private final ReactApplicationContext reactContext;
     private final InfobipRTC infobipRTC;
     private ApplicationCall outgoingCall;
+    private IncomingApplicationCall incomingCall;
+    private Map<String, String> incomingCallPayload = null;
     private AudioManager myAudioManager;
-
-//    private Endpoint endpoint;
-//    private Incoming incomingCall;
-//    private Outgoing outgoingCall;
-
-    public static HashMap<String, Object> options = new HashMap<String, Object>() {
-        {
-            put("debug", true);
-            put("enableTracking", true);
-        }
-    };
 
     public InfobipSdkModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
         this.infobipRTC = InfobipRTC.getInstance();
-        myAudioManager = (AudioManager)this.reactContext.getSystemService(Context.AUDIO_SERVICE);
+        myAudioManager = (AudioManager) this.reactContext.getSystemService(Context.AUDIO_SERVICE);
     }
 
     private void sendEvent(ReactContext reactContext,
@@ -101,17 +106,113 @@ public class InfobipSdkModule extends ReactContextBaseJavaModule implements Appl
     }
 
     @ReactMethod
-    public void login(String username, String password, String fcmToken, String certificateId) {
-//        endpoint.login(username, password, fcmToken, certificateId);
+    public void answer() {
+        if (this.incomingCall != null) {
+            this.incomingCall.accept();
+        } else {
+            Log.w(NAME, "Incoming call is not exist in incomingMap");
+        }
     }
 
     @ReactMethod
-    public void reconnect() {
+    public void reject() {
+        if (this.incomingCall != null) {
+            this.incomingCall.decline(DeclineOptions.builder().setDeclineOnAllDevices(true).build());
+            this.incomingCallPayload = null;
+        } else {
+            Log.w(NAME, "Incoming call is not exist in incomingMap");
+        }
     }
 
     @ReactMethod
-    public void logout() {
-//        endpoint.logout();
+    public void mute() {
+        if (this.incomingCall != null) {
+            try {
+                this.incomingCall.mute(true);
+            } catch (Exception e) {
+                Log.e(NAME, "mute: " + e.getMessage());
+            }
+            return;
+        }
+
+        if (this.outgoingCall != null) {
+            try {
+                this.outgoingCall.mute(true);
+            } catch (Exception e) {
+                Log.e(NAME, "mute: " + e.getMessage());
+            }
+        }
+    }
+
+    @ReactMethod
+    public void unmute() {
+        if (this.incomingCall != null) {
+            try {
+                this.incomingCall.mute(false);
+            } catch (Exception e) {
+                Log.e(NAME, "unmute: " + e.getMessage());
+            }
+            return;
+        }
+
+        if (this.outgoingCall != null) {
+            try {
+                this.outgoingCall.mute(false);
+            } catch (Exception e) {
+                Log.e(NAME, "unmute: " + e.getMessage());
+            }
+        }
+    }
+
+    @ReactMethod
+    public void hangup() {
+        if (this.incomingCall != null) {
+            this.incomingCall.hangup();
+            return;
+        }
+
+        if (this.outgoingCall != null) {
+            try {
+                this.outgoingCall.hangup();
+            } catch (Exception e) {
+                Log.e(NAME, "hangup: " + e.getMessage());
+            }
+        }
+    }
+
+    @ReactMethod
+    public void setAudioDevice(int device) {
+        switch (device) {
+            case 0: // 0 - Phone
+                this.myAudioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                this.myAudioManager.stopBluetoothSco();
+                this.myAudioManager.setBluetoothScoOn(false);
+                this.myAudioManager.setSpeakerphoneOn(false);
+                break;
+            case 1: // 1 - Speaker
+                this.myAudioManager.setMode(AudioManager.MODE_NORMAL);
+                this.myAudioManager.stopBluetoothSco();
+                this.myAudioManager.setBluetoothScoOn(false);
+                this.myAudioManager.setSpeakerphoneOn(true);
+                break;
+            case 2: // 2 - Bluetooth
+                this.myAudioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                this.myAudioManager.startBluetoothSco();
+                this.myAudioManager.setBluetoothScoOn(true);
+                break;
+            default:
+                Log.i(NAME, "setAudioDevice unknown device ==> " + device);
+        }
+    }
+
+    @ReactMethod
+    public void disablePushNotification(String token) {
+        this.infobipRTC.disablePushNotification(token, this.reactContext);
+    }
+
+    @ReactMethod
+    public void registerAndroidPushNotification(String fcmToken, String rtcToken, String pushConfigId) {
+        this.infobipRTC.enablePushNotification(rtcToken, this.reactContext, pushConfigId);
     }
 
     @ReactMethod
@@ -137,96 +238,195 @@ public class InfobipSdkModule extends ReactContextBaseJavaModule implements Appl
     }
 
     @ReactMethod
-    public void answer() {
-//        if (incomingCall != null) {
-//            incomingCall.answer();
-//        } else {
-//            Log.w(PlivoSdkModule.NAME, "Incoming call is not exist in incomingMap");
-//        }
+    public void handleIncomingCall(String sPayload) {
+        Gson gson = new Gson();
+        Type type = new TypeToken<Map<String, String>>() {
+        }.getType();
+        Map<String, String> payload = gson.fromJson(sPayload, type);
+
+        if (this.infobipRTC.isIncomingApplicationCall(payload) && this.incomingCallPayload == null) {
+            this.incomingCallPayload = payload;
+            this.infobipRTC.handleIncomingApplicationCall(payload, this.reactContext, this);
+        }
     }
 
-    @ReactMethod
-    public void reject() {
-//        if (incomingCall != null) {
-//            incomingCall.reject();
-//        } else {
-//            Log.w(PlivoSdkModule.NAME, "Incoming call is not exist in incomingMap");
-//        }
-    }
+    @Override
+    public void onIncomingApplicationCall(@NonNull IncomingApplicationCallEvent incomingApplicationCallEvent) {
+        this.incomingCall = incomingApplicationCallEvent.getIncomingApplicationCall();
 
-    @ReactMethod
-    public void mute() {
-//        if (incomingCall != null) {
-//            incomingCall.mute();
-//            return;
-//        }
-//
-        if (this.outgoingCall != null) {
-            try {
-                this.outgoingCall.mute(true);
-            } catch (Exception e) {
-                Log.e(NAME, "mute: " + e.getMessage());
+        WritableMap payload = getIncomingCallObject();
+
+        this.incomingCall.setEventListener(new ApplicationCallEventListener() {
+            @Override
+            public void onRinging(CallRingingEvent callRingingEvent) {
+
             }
-        }
-    }
 
-    @ReactMethod
-    public void unmute() {
-//        if (incomingCall != null) {
-//            incomingCall.unmute();
-//            return;
-//        }
-//
-        if (this.outgoingCall != null) {
-            try {
-                this.outgoingCall.mute(false);
-            } catch (Exception e) {
-                Log.e(NAME, "unmute: " + e.getMessage());
+            @Override
+            public void onEarlyMedia(CallEarlyMediaEvent callEarlyMediaEvent) {
+
             }
-        }
-    }
 
-    @ReactMethod
-    public void hangup() {
-//        if (incomingCall != null) {
-//            incomingCall.hangup();
-//            return;
-//        }
-//
-        if (this.outgoingCall != null) {
-            try {
-                this.outgoingCall.hangup();
-            } catch (Exception e) {
-                Log.e(NAME, "hangup: " + e.getMessage());
+            @Override
+            public void onEstablished(CallEstablishedEvent callEstablishedEvent) {
+                sendEvent(
+                        InfobipSdkModule.this.reactContext, "onIncomingCallAnswered", null);
             }
-        }
+
+            @Override
+            public void onHangup(CallHangupEvent callHangupEvent) {
+                sendEvent(
+                        InfobipSdkModule.this.reactContext, "onIncomingCallHangup", payload);
+            }
+
+            @Override
+            public void onError(ErrorEvent errorEvent) {
+
+            }
+
+            @Override
+            public void onCameraVideoAdded(CameraVideoAddedEvent cameraVideoAddedEvent) {
+
+            }
+
+            @Override
+            public void onCameraVideoUpdated(CameraVideoUpdatedEvent cameraVideoUpdatedEvent) {
+
+            }
+
+            @Override
+            public void onCameraVideoRemoved() {
+
+            }
+
+            @Override
+            public void onScreenShareAdded(ScreenShareAddedEvent screenShareAddedEvent) {
+
+            }
+
+            @Override
+            public void onScreenShareRemoved(ScreenShareRemovedEvent screenShareRemovedEvent) {
+
+            }
+
+            @Override
+            public void onConferenceJoined(ConferenceJoinedEvent conferenceJoinedEvent) {
+
+            }
+
+            @Override
+            public void onConferenceLeft(ConferenceLeftEvent conferenceLeftEvent) {
+
+            }
+
+            @Override
+            public void onParticipantJoining(ParticipantJoiningEvent participantJoiningEvent) {
+
+            }
+
+            @Override
+            public void onParticipantJoined(ParticipantJoinedEvent participantJoinedEvent) {
+
+            }
+
+            @Override
+            public void onParticipantLeft(ParticipantLeftEvent participantLeftEvent) {
+
+            }
+
+            @Override
+            public void onParticipantCameraVideoAdded(ParticipantCameraVideoAddedEvent participantCameraVideoAddedEvent) {
+
+            }
+
+            @Override
+            public void onParticipantCameraVideoRemoved(ParticipantCameraVideoRemovedEvent participantCameraVideoRemovedEvent) {
+
+            }
+
+            @Override
+            public void onParticipantScreenShareAdded(ParticipantScreenShareAddedEvent participantScreenShareAddedEvent) {
+
+            }
+
+            @Override
+            public void onParticipantScreenShareRemoved(ParticipantScreenShareRemovedEvent participantScreenShareRemovedEvent) {
+
+            }
+
+            @Override
+            public void onParticipantMuted(ParticipantMutedEvent participantMutedEvent) {
+
+            }
+
+            @Override
+            public void onParticipantUnmuted(ParticipantUnmutedEvent participantUnmutedEvent) {
+
+            }
+
+            @Override
+            public void onParticipantDeaf(ParticipantDeafEvent participantDeafEvent) {
+
+            }
+
+            @Override
+            public void onParticipantUndeaf(ParticipantUndeafEvent participantUndeafEvent) {
+
+            }
+
+            @Override
+            public void onParticipantStartedTalking(ParticipantStartedTalkingEvent participantStartedTalkingEvent) {
+
+            }
+
+            @Override
+            public void onParticipantStoppedTalking(ParticipantStoppedTalkingEvent participantStoppedTalkingEvent) {
+
+            }
+
+            @Override
+            public void onDialogJoined(DialogJoinedEvent dialogJoinedEvent) {
+
+            }
+
+            @Override
+            public void onDialogLeft(DialogLeftEvent dialogLeftEvent) {
+
+            }
+
+            @Override
+            public void onReconnecting(ReconnectingEvent reconnectingEvent) {
+
+            }
+
+            @Override
+            public void onReconnected(ReconnectedEvent reconnectedEvent) {
+
+            }
+        });
+
+        sendEvent(this.reactContext, "onIncomingCall", payload);
     }
 
-    // Plivo code...
+    @NonNull
+    private WritableMap getIncomingCallObject() {
+        String callId = this.incomingCallPayload.getOrDefault("callId", "");
+        String source = this.incomingCallPayload.getOrDefault("source", "");
+        String displayName = this.incomingCallPayload.getOrDefault("displayName", "");
+        String contactId = this.incomingCallPayload.getOrDefault("contactId", "");
 
-    @ReactMethod
-    public void setAudioDevice(int device) {
-        switch (device) {
-            case 0: // 0 - Phone
-                this.myAudioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-                this.myAudioManager.stopBluetoothSco();
-                this.myAudioManager.setBluetoothScoOn(false);
-                this.myAudioManager.setSpeakerphoneOn(false);
-                break;
-            case 1: // 1 - Speaker
-                this.myAudioManager.setMode(AudioManager.MODE_NORMAL);
-                this.myAudioManager.stopBluetoothSco();
-                this.myAudioManager.setBluetoothScoOn(false);
-                this.myAudioManager.setSpeakerphoneOn(true);
-                break;
-            case 2: // 2 - Bluetooth
-                this.myAudioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-                this.myAudioManager.startBluetoothSco();
-                this.myAudioManager.setBluetoothScoOn(true);
-                break;
-            default:
-                Log.i(NAME, "setAudioDevice unknown device ==> " + device);
-        }
+        // Create map for params
+        WritableMap payload = Arguments.createMap();
+
+        // Put data to map
+        payload.putString("callId", callId);
+        payload.putString("callerPhone", source);
+        payload.putString("callerName", displayName);
+        payload.putString("callerId", contactId);
+
+        payload.putString("name", displayName);
+        payload.putBoolean("shouldDisplayCallUI", true);
+        return payload;
     }
 
     @Override
