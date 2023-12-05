@@ -114,7 +114,7 @@ export class InfoBipClient {
     InfoBipNativeSdk.answer();
   }
 
-  handleIncomingCall(payload) {
+  handleIncomingCall(payload: any) {
     if (Platform.OS === 'android') {
       InfoBipNativeSdk.handleIncomingCall(payload);
     } else {
