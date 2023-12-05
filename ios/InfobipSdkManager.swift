@@ -10,36 +10,30 @@ typealias IncomingCompletion = ()->Void
 
 final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, IncomingApplicationCallEventListener{
     
-    
     var identity: String {
         return UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
     }
     static var pushCredentials: PKPushCredentials?
-    //    static var voipToken: String?
     static var isUserLoggedIn: Bool = false
     static var incomingPayload: PKPushPayload?
     var incomingCompletion: IncomingCompletion?
-    
     var infobipRTC: InfobipRTC {
         get {
             return getInfobipRTCInstance()
         }
     }
-    
     let audioDeviceManager = AudioDeviceManager()
+    private var hasListeners : Bool = false
+    var outgoingCall: ApplicationCall?
+    var incomingApplicationCall: IncomingApplicationCall?
+    
+    static var shared: InfobipSdkManager?
     
     override init() {
         super.init()
         audioDeviceManager.delegate = self
         InfobipSdkManager.shared = self
     }
-    
-    
-    private var hasListeners : Bool = false
-    var outgoingCall: ApplicationCall?
-    var incomingApplicationCall: IncomingApplicationCall?
-    
-    static var shared: InfobipSdkManager?
     
     override func supportedEvents() -> [String] {
         return [
@@ -62,18 +56,12 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
     }
     
     override func startObserving() {
-        print("InfobipSdk ReactNativeEventEmitter startObserving")
-        
         hasListeners = true
-        
         super.startObserving()
     }
     
     override func stopObserving() {
-        print("InfobipSdk ReactNativeEventEmitter stopObserving")
-        
         hasListeners = false
-        
         super.stopObserving()
     }
     
@@ -81,6 +69,7 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         return InfobipSdkManager.isUserLoggedIn
     }
     
+    // This function used to initiate the outgoing call
     @objc func call(_ apiKey: String, token: String, environment: String, identity: String, contactId: String, destination: String, caller: String) {
         AVAudioSession.sharedInstance().requestRecordPermission { granted in
             if(granted){
@@ -95,19 +84,12 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
                     print("outgoingCall (error) ===> ", ex.localizedDescription);
                 }
             }else{
-                print("Microphone permission not granted")
                 InfobipSdkManager.shared?.sendEvent(withName: "onOutgoingCallHangup", body: "")
             }
         }
     }
-    //    func convertToHexString(credentials: PKPushCredentials) -> String {
-    //
-    //        let voipToken = credentials.token
-    //        let deviceToken: String = voipToken.reduce("", {$0 + String(format: "%02X", $1) })
-    //
-    //        return deviceToken
-    //    }
     
+    //This fucntion used to convert string into dictionary
     func convertToDictionary(text: String) -> [String: Any]? {
         if let data = text.data(using: .utf8) {
             do {
@@ -119,6 +101,7 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         return nil
     }
     
+    //This function used to convert payload into dictionary
     func convertIncomingCallToObject(_ payload: PKPushPayload!) -> [String: Any] {
         let objCall = payload.dictionaryPayload
         
@@ -143,6 +126,7 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
     }
     
     
+    // This function used to handle incoming call from CallKit intent
     @objc func handleIncomingCallFromCallKeep() {
         let payload = InfobipSdkManager.incomingPayload
         if InfobipSdkManager.shared!.infobipRTC.isIncomingApplicationCall(payload!) {
@@ -151,10 +135,13 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
             InfobipSdkManager.shared?.infobipRTC.handleIncomingApplicationCall(payload!, InfobipSdkManager.shared!)
         }
     }
+    
     @objc static func setPushPayload(_ payload: PKPushPayload) {
         InfobipSdkManager.incomingPayload = payload
         
     }
+    
+    // This funciton used to handle in app incoming call
     @objc static func handleIncomingCall(_ payload: PKPushPayload, completion: @escaping IncomingCompletion) {
         InfobipSdkManager.shared?.incomingCompletion = completion
         if ((InfobipSdkManager.shared?.infobipRTC.isIncomingApplicationCall(payload)) != nil) {
@@ -164,19 +151,21 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         }
     }
     
+    // This funciton will answer the incomging call
     @objc func answer() {
         if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             incomingCall.accept()
         }
     }
     
+    // This funciton used to reject the call
     @objc func reject() {
-        //        sendEvent(withName: "onIncomingCallRejected", body: data);
         if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             incomingCall.decline(DeclineOptions(true))
         }
     }
     
+    // This funciton used to mute the call
     @objc func mute() {
         if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             do {
@@ -193,6 +182,7 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         }
     }
     
+    // This funciton used to unmute the call
     @objc func unmute() {
         if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             do {
@@ -209,8 +199,8 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         }
     }
     
+    // This funciton used to hangup outgoing or incoming call
     @objc func hangup() {
-        print("hangup called...")
         if let incomingCall = InfobipSdkManager.shared?.incomingApplicationCall {
             incomingCall.hangup()
         } else if let outgoingCall = InfobipSdkManager.shared?.outgoingCall {
@@ -218,23 +208,21 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         }
     }
     
+    // This function used to set the audio input
     @objc func setAudioDevice(_ device: Int) {
         InfobipSdkManager.shared?.audioDeviceManager.setAudioDevice(type: device)
     }
     
     @objc func disablePushNotification(_ token: String) {
-        print("Logout success! --- disablePushNotification --- ")
         InfobipSdkManager.isUserLoggedIn = false;
         InfobipSdkManager.shared?.infobipRTC.disablePushNotification(token)
     }
     
+    // This fucntion used to register the push notification
     @objc func registerPushNotification(_ token: String, pushConfigId: String) {
         if let credentials = InfobipSdkManager.pushCredentials{
             InfobipSdkManager.isUserLoggedIn = true;
             InfobipSdkManager.shared?.infobipRTC.enablePushNotification(token, pushCredentials: credentials, debug: isDebug(), pushConfigId: pushConfigId) { result in
-                print("enablePushNotification result : \(result.status)")
-                print("enablePushNotification result : \(result.message)")
-                
             }
         }else{
             print("pushCredentials are null")
@@ -243,12 +231,9 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
     }
     @objc static func registerPushCredentials(_ credentials: PKPushCredentials) {
         InfobipSdkManager.pushCredentials = credentials
-        //        let voipToken = credentials.token
-        //        let deviceToken: String = voipToken.reduce("", {$0 + String(format: "%02X", $1) })
-        //        InfobipSdkManager.voipToken = deviceToken
-        //        print("voip token is : ", InfobipSdkManager.voipToken)
     }
     
+    // This function used to set the incoming call event listener
     func onIncomingApplicationCall(_ incomingApplicationCallEvent: IncomingApplicationCallEvent) {
         let body = convertIncomingCallToObject(InfobipSdkManager.incomingPayload)
         InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCall", body: body);
@@ -257,7 +242,7 @@ final class InfobipSdkManager: RCTEventEmitter, PhoneCallEventListener, Incoming
         if let block = InfobipSdkManager.shared?.incomingCompletion {
             block()
         }
-        InfobipSdkManager.shared?.incomingApplicationCall!.applicationCallEventListener = WebrtcCallListener(InfobipSdkManager.shared!.incomingApplicationCall!)
+        InfobipSdkManager.shared?.incomingApplicationCall!.applicationCallEventListener = IncomingCallListener(InfobipSdkManager.shared!.incomingApplicationCall!)
     }
     
     @objc func isDebug() -> Bool {
@@ -277,87 +262,86 @@ extension InfobipSdkManager: WebrtcCallEventListener, ApplicationCallEventListen
         
     }
     func onConferenceJoined(_ conferenceJoinedEvent: ConferenceJoinedEvent) {
-        print("event triggered: ", conferenceJoinedEvent)
+
     }
     
     func onConferenceLeft(_ conferenceLeftEvent: ConferenceLeftEvent) {
-        print("conferenceLeftEvent triggered: ", conferenceLeftEvent)
+    
     }
     
     func onParticipantJoining(_ participantJoiningEvent: ParticipantJoiningEvent) {
-        print("participantJoiningEvent triggered: ", participantJoiningEvent)
+        
     }
     
     func onParticipantJoined(_ participantJoinedEvent: ParticipantJoinedEvent) {
-        print("participantJoinedEvent triggered: ", participantJoinedEvent)
+        
     }
     
     func onParticipantLeft(_ participantLeftEvent: ParticipantLeftEvent) {
-        print("participantLeftEvent triggered: ", participantLeftEvent)
+        
     }
     
     func onParticipantCameraVideoAdded(_ participantCameraVideoAddedEvent: ParticipantCameraVideoAddedEvent) {
-        print("participantCameraVideoAddedEvent triggered: ", participantCameraVideoAddedEvent)
+        
     }
     
     func onParticipantCameraVideoRemoved(_ participantCameraVideoRemovedEvent: ParticipantCameraVideoRemovedEvent) {
-        print("participantCameraVideoRemovedEvent triggered: ", participantCameraVideoRemovedEvent)
+        
     }
     
     func onParticipantScreenShareAdded(_ participantScreenShareAddedEvent: ParticipantScreenShareAddedEvent) {
-        print("participantScreenShareAddedEvent triggered: ", participantScreenShareAddedEvent)
+        
     }
     
     func onParticipantScreenShareRemoved(_ participantScreenShareRemovedEvent: ParticipantScreenShareRemovedEvent) {
-        print("participantScreenShareRemovedEvent triggered: ", participantScreenShareRemovedEvent)
+        
     }
     
     func onParticipantMuted(_ participantMutedEvent: ParticipantMutedEvent) {
-        print("participantMutedEvent triggered: ", participantMutedEvent)
+        
     }
     
     func onParticipantUnmuted(_ participantUnmutedEvent: ParticipantUnmutedEvent) {
-        print("participantUnmutedEvent triggered: ", participantUnmutedEvent)
+        
     }
     
     func onParticipantDeaf(_ participantDeafEvent: ParticipantDeafEvent) {
-        print("participantDeafEvent triggered: ", participantDeafEvent)
+        
     }
     
     func onParticipantUndeaf(_ participantUndeafEvent: ParticipantUndeafEvent) {
-        print("participantUndeafEvent triggered: ", participantUndeafEvent)
+        
     }
     
     func onParticipantStartedTalking(_ participantStartedTalkingEvent: ParticipantStartedTalkingEvent) {
-        print("participantStartedTalkingEvent triggered: ", participantStartedTalkingEvent)
+        
     }
     
     func onParticipantStoppedTalking(_ participantStoppedTalkingEvent: ParticipantStoppedTalkingEvent) {
-        print("participantStoppedTalkingEvent triggered: ", participantStoppedTalkingEvent)
+        
     }
     
     func onDialogJoined(_ dialogJoinedEvent: DialogJoinedEvent) {
-        print("dialogJoinedEvent triggered: ", dialogJoinedEvent)
+        
     }
     
     func onDialogLeft(_ dialogLeftEvent: DialogLeftEvent) {
-        print("dialogLeftEvent triggered: ", dialogLeftEvent)
+        
     }
     
     func onReconnecting(_ callReconnectingEvent: CallReconnectingEvent) {
-        print("callReconnectingEvent triggered: ", callReconnectingEvent)
+        
     }
     
     func onReconnected(_ callReconnectedEvent: CallReconnectedEvent) {
-        print("callReconnectedEvent triggered: ", callReconnectedEvent)
+        
     }
     
     func onRinging(_ callRingingEvent: CallRingingEvent) {
-        print("on ringing outgoing")
+        
     }
     
     func onEarlyMedia(_ callEarlyMediaEvent: CallEarlyMediaEvent) {
-        print("callEarlyMediaEvent triggered ==> ", callEarlyMediaEvent)
         InfobipSdkManager.shared?.audioDeviceManager.isBluetoothDeviceConnected()
         InfobipSdkManager.shared?.sendEvent(withName: "onOutgoingCallRinging", body: "");
     }
@@ -422,11 +406,8 @@ extension InfobipSdkManager: WebrtcCallEventListener, ApplicationCallEventListen
 extension InfobipSdkManager: IncomingCallEventListener {
     
     func onIncomingWebrtcCall(_ incomingWebrtcCallEvent: IncomingWebrtcCallEvent) {
-        //        self.incomingWebrtcCall = incomingWebrtcCallEvent.incomingWebrtcCall
-        //        self.incomingWebrtcCall!.webrtcCallEventListener = WebrtcCallListener(self.incomingWebrtcCall!)
+        
     }
-    
-    
     
 }
 
@@ -436,15 +417,57 @@ extension InfobipSdkManager: AudioDeviceManagerDelegate {
     }
 }
 
-@objc(WebrtcCallListener)
+@objc(IncomingCallListener)
 
-class WebrtcCallListener: RCTEventEmitter, ApplicationCallEventListener{
+class IncomingCallListener: RCTEventEmitter, ApplicationCallEventListener{
+    
+    let incomingCall: IncomingApplicationCall
+    static var shared: WebrtcCallListener?
+    private var hasListeners : Bool = false
+    
+    init(_ incomingCall: IncomingApplicationCall) {
+        self.incomingCall = incomingCall
+        super.init()
+        IncomingCallListener.shared = self
+    }
+    
+    
+    override func supportedEvents() -> [String] {
+        return [
+            "onLogin",
+            "onLoginFailed",
+            "onLogout",
+            "onIncomingCall",
+            "onIncomingCallHangup",
+            "onIncomingCallRejected",
+            "onIncomingCallAnswered",
+            "onIncomingCallInvalid",
+            "onOutgoingCall",
+            "onOutgoingCallAnswered",
+            "onOutgoingCallRinging",
+            "onOutgoingCallRejected",
+            "onOutgoingCallHangup",
+            "onOutgoingCallInvalid",
+            "headphonesStateChanged"
+        ]
+    }
+    
+    override func startObserving() {
+        hasListeners = true
+        
+        super.startObserving()
+    }
+    
+    override func stopObserving() {
+        hasListeners = false
+        
+        super.stopObserving()
+    }
+    
     func onRinging(_ callRingingEvent: CallRingingEvent) {
-        print("incoming call on ringing")
     }
     
     func onEstablished(_ callEstablishedEvent: CallEstablishedEvent) {
-        print("on call established...")
         InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCallAnswered", body: "");
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             InfobipSdkManager.shared?.audioDeviceManager.isBluetoothDeviceConnected()
@@ -452,23 +475,20 @@ class WebrtcCallListener: RCTEventEmitter, ApplicationCallEventListener{
     }
     
     func onHangup(_ callHangupEvent: CallHangupEvent) {
-        print("incoming call hang up")
         let body = InfobipSdkManager.shared?.convertIncomingCallToObject(InfobipSdkManager.incomingPayload)
-        //        sendEvent(withName: "onIncomingCallHangup", body: "")
-        //        WebrtcCallListener.shared?.sendEvent(withName: "onIncomingCallHangup", body: "")
         InfobipSdkManager.shared?.sendEvent(withName: "onIncomingCallHangup", body: body)
     }
     
     func onError(_ errorEvent: ErrorEvent) {
-        print("on error (incoming...)");
+        
     }
     
     func onConferenceJoined(_ conferenceJoinedEvent: ConferenceJoinedEvent) {
-        print("on joined (incoming...)");
+        
     }
     
     func onEarlyMedia(_ callEarlyMediaEvent: CallEarlyMediaEvent) {
-        print("on EarlyMedia (incoming...)");
+        
     }
     
     func onCameraVideoAdded(_ cameraVideoAddedEvent: CameraVideoAddedEvent) {
@@ -561,54 +581,5 @@ class WebrtcCallListener: RCTEventEmitter, ApplicationCallEventListener{
     
     func onReconnected(_ callReconnectedEvent: CallReconnectedEvent) {
         
-    }
-    
-    let webrtcCall: IncomingApplicationCall
-    
-    static var shared: WebrtcCallListener?
-    
-    init(_ webrtcCall: IncomingApplicationCall) {
-        self.webrtcCall = webrtcCall
-        super.init()
-        WebrtcCallListener.shared = self
-    }
-    
-    
-    override func supportedEvents() -> [String] {
-        return [
-            "onLogin",
-            "onLoginFailed",
-            "onLogout",
-            "onIncomingCall",
-            "onIncomingCallHangup",
-            "onIncomingCallRejected",
-            "onIncomingCallAnswered",
-            "onIncomingCallInvalid",
-            "onOutgoingCall",
-            "onOutgoingCallAnswered",
-            "onOutgoingCallRinging",
-            "onOutgoingCallRejected",
-            "onOutgoingCallHangup",
-            "onOutgoingCallInvalid",
-            "headphonesStateChanged"
-        ]
-    }
-    
-    private var hasListeners : Bool = false
-    
-    override func startObserving() {
-        print("InfobipSdk ReactNativeEventEmitter startObserving")
-        
-        hasListeners = true
-        
-        super.startObserving()
-    }
-    
-    override func stopObserving() {
-        print("InfobipSdk ReactNativeEventEmitter stopObserving")
-        
-        hasListeners = false
-        
-        super.stopObserving()
     }
 }
