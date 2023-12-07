@@ -68,16 +68,6 @@ export class InfoBipClient {
     destination: string,
     caller: string
   ) {
-    console.log(
-      'calling ==> ',
-      apiKey,
-      webRTCToken,
-      environment,
-      identity,
-      contactId,
-      destination,
-      caller
-    );
     return InfoBipNativeSdk.call(
       apiKey,
       webRTCToken,

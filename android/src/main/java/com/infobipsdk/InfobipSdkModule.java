@@ -74,6 +74,8 @@ import java.util.Map;
 public class InfobipSdkModule extends ReactContextBaseJavaModule implements ApplicationCallEventListener, IncomingApplicationCallEventListener {
     public static final String NAME = "InfobipSdkManager";
 
+    public static final String TAG = InfobipSdkModule.class.getName();
+
     private final ReactApplicationContext reactContext;
     private final InfobipRTC infobipRTC;
     private ApplicationCall outgoingCall;
@@ -239,12 +241,20 @@ public class InfobipSdkModule extends ReactContextBaseJavaModule implements Appl
 
     @ReactMethod
     public void handleIncomingCall(String sPayload) {
+        Log.i(TAG, "handleIncomingCall: " + sPayload);
         Gson gson = new Gson();
         Type type = new TypeToken<Map<String, String>>() {
         }.getType();
         Map<String, String> payload = gson.fromJson(sPayload, type);
 
-        if (this.infobipRTC.isIncomingApplicationCall(payload) && this.incomingCallPayload == null) {
+        WritableMap mPayload = getIncomingCallObject(payload);
+
+        Log.i(TAG, "handleIncomingCall: " + mPayload);
+
+//        sendEvent(this.reactContext, "onIncomingCall", mPayload);
+
+        if (this.infobipRTC.isIncomingApplicationCall(payload) && InfobipSdkModule.this.incomingCallPayload == null) {
+//        if (this.infobipRTC.isIncomingApplicationCall(payload)) {
             this.incomingCallPayload = payload;
             this.infobipRTC.handleIncomingApplicationCall(payload, this.reactContext, this);
         }
@@ -254,7 +264,7 @@ public class InfobipSdkModule extends ReactContextBaseJavaModule implements Appl
     public void onIncomingApplicationCall(@NonNull IncomingApplicationCallEvent incomingApplicationCallEvent) {
         this.incomingCall = incomingApplicationCallEvent.getIncomingApplicationCall();
 
-        WritableMap payload = getIncomingCallObject();
+        WritableMap payload = getIncomingCallObject(this.incomingCallPayload);
 
         this.incomingCall.setEventListener(new ApplicationCallEventListener() {
             @Override
@@ -269,14 +279,16 @@ public class InfobipSdkModule extends ReactContextBaseJavaModule implements Appl
 
             @Override
             public void onEstablished(CallEstablishedEvent callEstablishedEvent) {
-                sendEvent(
+                InfobipSdkModule.this.sendEvent(
                         InfobipSdkModule.this.reactContext, "onIncomingCallAnswered", null);
             }
 
             @Override
             public void onHangup(CallHangupEvent callHangupEvent) {
-                sendEvent(
+                WritableMap payload = getIncomingCallObject(InfobipSdkModule.this.incomingCallPayload);
+                InfobipSdkModule.this.sendEvent(
                         InfobipSdkModule.this.reactContext, "onIncomingCallHangup", payload);
+                InfobipSdkModule.this.incomingCallPayload = null;
             }
 
             @Override
@@ -409,11 +421,11 @@ public class InfobipSdkModule extends ReactContextBaseJavaModule implements Appl
     }
 
     @NonNull
-    private WritableMap getIncomingCallObject() {
-        String callId = this.incomingCallPayload.getOrDefault("callId", "");
-        String source = this.incomingCallPayload.getOrDefault("source", "");
-        String displayName = this.incomingCallPayload.getOrDefault("displayName", "");
-        String contactId = this.incomingCallPayload.getOrDefault("contactId", "");
+    private WritableMap getIncomingCallObject(Map<String, String> mPayload) {
+        String callId = mPayload.getOrDefault("callId", "");
+        String source = mPayload.getOrDefault("source", "");
+        String displayName = mPayload.getOrDefault("displayName", "");
+        String contactId = mPayload.getOrDefault("contactId", "");
 
         // Create map for params
         WritableMap payload = Arguments.createMap();
