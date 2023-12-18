@@ -73,7 +73,6 @@ import java.util.Map;
 @ReactModule(name = InfobipSdkModule.NAME)
 public class InfobipSdkModule extends ReactContextBaseJavaModule implements ApplicationCallEventListener, IncomingApplicationCallEventListener {
     public static final String NAME = "InfobipSdkManager";
-
     public static final String TAG = InfobipSdkModule.class.getName();
 
     private final ReactApplicationContext reactContext;
@@ -93,9 +92,6 @@ public class InfobipSdkModule extends ReactContextBaseJavaModule implements Appl
     private void sendEvent(ReactContext reactContext,
                            String eventName,
                            @Nullable WritableMap params) {
-
-        Log.w(InfobipSdkModule.NAME, "sendEvent: " + eventName);
-
         reactContext
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, params);
@@ -119,8 +115,8 @@ public class InfobipSdkModule extends ReactContextBaseJavaModule implements Appl
     @ReactMethod
     public void reject() {
         if (this.incomingCall != null) {
-            this.incomingCall.decline(DeclineOptions.builder().setDeclineOnAllDevices(true).build());
-            this.incomingCallPayload = null;
+            DeclineOptions declineOptions = DeclineOptions.builder().setDeclineOnAllDevices(true).build();
+            this.incomingCall.decline(declineOptions);
         } else {
             Log.w(NAME, "Incoming call is not exist in incomingMap");
         }
@@ -241,22 +237,22 @@ public class InfobipSdkModule extends ReactContextBaseJavaModule implements Appl
 
     @ReactMethod
     public void handleIncomingCall(String sPayload) {
-        Log.i(TAG, "handleIncomingCall: " + sPayload);
-        Gson gson = new Gson();
-        Type type = new TypeToken<Map<String, String>>() {
-        }.getType();
-        Map<String, String> payload = gson.fromJson(sPayload, type);
-
-        WritableMap mPayload = getIncomingCallObject(payload);
-
-        Log.i(TAG, "handleIncomingCall: " + mPayload);
+        try {
+            Gson gson = new Gson();
+            Type type = new TypeToken<Map<String, String>>() {
+            }.getType();
+            Map<String, String> payload = gson.fromJson(sPayload, type);
+            WritableMap mPayload = getIncomingCallObject(payload);
 
 //        sendEvent(this.reactContext, "onIncomingCall", mPayload);
 
-        if (this.infobipRTC.isIncomingApplicationCall(payload) && InfobipSdkModule.this.incomingCallPayload == null) {
+            if (this.infobipRTC.isIncomingApplicationCall(payload) && InfobipSdkModule.this.incomingCallPayload == null) {
 //        if (this.infobipRTC.isIncomingApplicationCall(payload)) {
-            this.incomingCallPayload = payload;
-            this.infobipRTC.handleIncomingApplicationCall(payload, this.reactContext, this);
+                this.incomingCallPayload = payload;
+                this.infobipRTC.handleIncomingApplicationCall(payload, this.reactContext, this);
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "handleIncomingCall: " + e.getMessage());
         }
     }
 
@@ -585,114 +581,4 @@ public class InfobipSdkModule extends ReactContextBaseJavaModule implements Appl
     public void onReconnected(ReconnectedEvent reconnectedEvent) {
 
     }
-
-//    @Override
-//    public void onLogin() {
-//        sendEvent(reactContext, "Plivo-onLogin", null);
-//    }
-//
-//    @Override
-//    public void onLogout() {
-//        sendEvent(reactContext, "Plivo-onLogout", null);
-//    }
-//
-//    @Override
-//    public void onLoginFailed() {
-//        sendEvent(reactContext, "Plivo-onLoginFailed", null);
-//    }
-//
-//    @Override
-//    public void onLoginFailed(String message) {
-//
-//    }
-//
-//    @Override
-//    public void onIncomingDigitNotification(String s) {
-//
-//    }
-//
-//    @Override
-//    public void onIncomingCall(Incoming incoming) {
-//        WritableMap params = Arguments.createMap();
-//        params.putString("callId", incoming.getCallId());
-//        sendEvent(reactContext, "Plivo-onIncomingCall", params);
-//    }
-//
-//    @Override
-//    public void onIncomingCallConnected(Incoming incoming) {
-//
-//    }
-//
-//    @Override
-//    public void onIncomingCallHangup(Incoming incoming) {
-//        WritableMap params = Arguments.createMap();
-//        params.putString("callId", incoming.getCallId());
-//        sendEvent(reactContext, "Plivo-onIncomingCallHangup", params);
-//    }
-//
-//    @Override
-//    public void onIncomingCallRejected(Incoming incoming) {
-//        WritableMap params = Arguments.createMap();
-//        params.putString("callId", incoming.getCallId());
-//        sendEvent(reactContext, "Plivo-onIncomingCallRejected", params);
-//    }
-//
-//    @Override
-//    public void onIncomingCallInvalid(Incoming incoming) {
-//        WritableMap params = Arguments.createMap();
-//        params.putString("callId", incoming.getCallId());
-//        sendEvent(reactContext, "Plivo-onIncomingCallInvalid", params);
-//    }
-//
-//    @Override
-//    public void onOutgoingCall(Outgoing outgoing) {
-//        WritableMap params = Arguments.createMap();
-//        params.putString("callId", outgoing.getCallId());
-//        sendEvent(reactContext, "Plivo-onOutgoingCall", params);
-//    }
-//
-//    @Override
-//    public void onOutgoingCallRinging(Outgoing outgoing) {
-//        WritableMap params = Arguments.createMap();
-//        params.putString("callId", outgoing.getCallId());
-//        sendEvent(reactContext, "Plivo-onOutgoingCallRinging", params);
-//    }
-//
-//    @Override
-//    public void onOutgoingCallAnswered(Outgoing outgoing) {
-//        WritableMap params = Arguments.createMap();
-//        params.putString("callId", outgoing.getCallId());
-//        sendEvent(reactContext, "Plivo-onOutgoingCallAnswered", params);
-//    }
-//
-//    @Override
-//    public void onOutgoingCallHangup(Outgoing outgoing) {
-//        WritableMap params = Arguments.createMap();
-//        params.putString("callId", outgoing.getCallId());
-//        sendEvent(reactContext, "Plivo-onOutgoingCallHangup", params);
-//    }
-//
-//    @Override
-//    public void onOutgoingCallRejected(Outgoing outgoing) {
-//        WritableMap params = Arguments.createMap();
-//        params.putString("callId", outgoing.getCallId());
-//        sendEvent(reactContext, "Plivo-onOutgoingCallRejected", params);
-//    }
-//
-//    @Override
-//    public void onOutgoingCallInvalid(Outgoing outgoing) {
-//        WritableMap params = Arguments.createMap();
-//        params.putString("callId", outgoing.getCallId());
-//        sendEvent(reactContext, "Plivo-onOutgoingCallInvalid", params);
-//    }
-//
-//    @Override
-//    public void mediaMetrics(HashMap hashMap) {
-//
-//    }
-//
-//    @Override
-//    public void onPermissionDenied(String message) {
-//
-//    }
 }
